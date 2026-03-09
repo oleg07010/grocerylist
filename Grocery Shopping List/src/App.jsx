@@ -119,15 +119,19 @@ export default function App() {
   const handleAdd = async () => {
     const name = newItem.trim();
     if (!name) return;
-    await addDoc(collection(db, "groceries"), {
-      name,
-      qty: newQty.trim() || "",
-      checked: false,
-      createdAt: serverTimestamp(),
-    });
-    setNewItem("");
-    setNewQty("");
-    showSnack(`"${name}" added!`);
+    try {
+      await addDoc(collection(db, "groceries"), {
+        name,
+        qty: newQty.trim() || "",
+        checked: false,
+        createdAt: serverTimestamp(),
+      });
+      setNewItem("");
+      setNewQty("");
+      showSnack(`"${name}" added!`);
+    } catch (err) {
+      showSnack(`Could not add item: ${err.message}`, "error");
+    }
   };
 
   const handleToggle = async (item) => {
