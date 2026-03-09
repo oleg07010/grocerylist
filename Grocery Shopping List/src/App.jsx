@@ -36,7 +36,6 @@ import {
   Divider,
   Tooltip,
   Paper,
-  InputAdornment,
   CircularProgress,
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
@@ -46,7 +45,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import SearchIcon from "@mui/icons-material/Search";
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
 const theme = createTheme({
@@ -82,7 +80,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [newItem, setNewItem] = useState("");
   const [newQty, setNewQty] = useState("");
-  const [search, setSearch] = useState("");
 
   // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
@@ -110,9 +107,6 @@ export default function App() {
   const showSnack = (msg, severity = "success") =>
     setSnack({ open: true, msg, severity });
 
-  const filtered = items.filter((i) =>
-    i.name.toLowerCase().includes(search.toLowerCase())
-  );
   const doneCount = items.filter((i) => i.checked).length;
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
@@ -264,44 +258,37 @@ export default function App() {
 
           {/* ── List ── */}
           <Paper sx={{ mb: 3 }}>
-            {/* Search + Reset bar */}
+            {/* Reset bar */}
             <Box
               sx={{
                 p: 2,
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
                 borderBottom: "1px solid",
                 borderColor: "divider",
               }}
             >
-              <TextField
-                placeholder="Search items…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                size="small"
-                fullWidth
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" sx={{ color: "text.disabled" }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
               <Tooltip title="Uncheck all items (reset for new week)">
-                <span>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    startIcon={<RestartAltIcon />}
-                    onClick={() => setResetOpen(true)}
-                    disabled={doneCount === 0}
-                    size="small"
-                    sx={{ whiteSpace: "nowrap" }}
-                  >
-                    Reset
-                  </Button>
+                <span style={{ display: "block" }}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<RestartAltIcon />}
+                  onClick={() => setResetOpen(true)}
+                  disabled={doneCount === 0}
+                  sx={{
+                    color: "#1976d2",
+                    borderColor: "#1976d2",
+                    "&:hover": {
+                      borderColor: "#1565c0",
+                      bgcolor: "rgba(25, 118, 210, 0.04)",
+                    },
+                    "&.Mui-disabled": {
+                      color: "rgba(25, 118, 210, 0.5)",
+                      borderColor: "rgba(25, 118, 210, 0.3)",
+                    },
+                  }}
+                >
+                  Reset
+                </Button>
                 </span>
               </Tooltip>
             </Box>
@@ -311,16 +298,16 @@ export default function App() {
               <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
                 <CircularProgress color="primary" />
               </Box>
-            ) : filtered.length === 0 ? (
+            ) : items.length === 0 ? (
               <Box sx={{ py: 6, textAlign: "center", color: "text.disabled" }}>
                 <ShoppingCartIcon sx={{ fontSize: 48, mb: 1, opacity: 0.3 }} />
                 <Typography variant="body2">
-                  {search ? "No items match your search" : "Your list is empty — add something!"}
+                  Your list is empty — add something!
                 </Typography>
               </Box>
             ) : (
               <List disablePadding>
-                {filtered.map((item, idx) => (
+                {items.map((item, idx) => (
                   <Box key={item.id}>
                     {idx > 0 && <Divider component="li" />}
                     <ListItem
