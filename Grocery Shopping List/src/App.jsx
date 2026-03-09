@@ -202,17 +202,29 @@ export default function App() {
             </Typography>
 
             {/* Progress chips */}
-            <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 2 }}>
               <Chip
-                icon={<CheckCircleOutlineIcon />}
+                icon={<CheckCircleOutlineIcon sx={{ fontSize: 28 }} />}
                 label={`${doneCount} done`}
-                size="small"
-                sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "#fff", fontWeight: 600 }}
+                sx={{
+                  bgcolor: "rgba(255,255,255,0.2)",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: "1rem",
+                  py: 1.5,
+                  px: 2,
+                  "& .MuiChip-icon": { ml: 0.5, mr: 0.5 },
+                }}
               />
               <Chip
                 label={`${items.length - doneCount} remaining`}
-                size="small"
-                sx={{ bgcolor: "rgba(255,255,255,0.12)", color: "#fff" }}
+                sx={{
+                  bgcolor: "rgba(255,255,255,0.12)",
+                  color: "#fff",
+                  fontSize: "1rem",
+                  py: 1.5,
+                  px: 2,
+                }}
               />
             </Box>
           </Container>
