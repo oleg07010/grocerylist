@@ -278,6 +278,35 @@ export default function App() {
             </Box>
           </Paper>
 
+          {/* Global Reset above search & add section */}
+          <Box sx={{ mb: 2 }}>
+            <Tooltip title="Uncheck all items (reset for new week)">
+              <span>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<RestartAltIcon />}
+                  onClick={() => setResetOpen(true)}
+                  disabled={doneCount === 0}
+                  sx={{
+                    color: "#1976d2",
+                    borderColor: "#1976d2",
+                    "&:hover": {
+                      borderColor: "#1565c0",
+                      bgcolor: "rgba(25, 118, 210, 0.04)",
+                    },
+                    "&.Mui-disabled": {
+                      color: "rgba(25, 118, 210, 0.5)",
+                      borderColor: "rgba(25, 118, 210, 0.3)",
+                    },
+                  }}
+                >
+                  Reset checked items
+                </Button>
+              </span>
+            </Tooltip>
+          </Box>
+
           {/* Toolbar */}
           <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
             <TextField placeholder="Search items…" value={search} onChange={(e) => setSearch(e.target.value)}
