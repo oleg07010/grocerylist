@@ -314,12 +314,6 @@ export default function App() {
               InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: "text.disabled" }} /></InputAdornment> }} />
             <Button variant="outlined" color="primary" startIcon={<CreateNewFolderIcon />}
               onClick={() => setAddSectionOpen(true)} size="small">Add Section</Button>
-            <Tooltip title="Uncheck all items (reset for new week)">
-              <span>
-                <Button variant="outlined" color="secondary" startIcon={<RestartAltIcon />}
-                  onClick={() => setResetOpen(true)} disabled={doneCount === 0} size="small">Reset</Button>
-              </span>
-            </Tooltip>
           </Box>
 
           {/* Sections + Items */}
