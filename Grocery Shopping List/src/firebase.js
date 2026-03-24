@@ -1,28 +1,41 @@
 // src/firebase.js
-// ─────────────────────────────────────────────────────────────────────────────
-// SETUP INSTRUCTIONS:
-// 1. Go to https://console.firebase.google.com/
-// 2. Click "Add project" → give it a name (e.g. "grocery-app")
-// 3. In the left sidebar: Build → Firestore Database → "Create database"
-//    • Choose "Start in test mode" (you can add security rules later)
-//    • Pick a location close to you
-// 4. In the left sidebar: Project Settings (gear icon) → "Your apps" → </>  (Web)
-//    • Register app, then copy the firebaseConfig values below
-// 5. Replace the placeholder values below with your real config
-// ─────────────────────────────────────────────────────────────────────────────
+// Copy .env.example → .env.local and fill in values from Firebase Console
+// (Project settings → Your apps → Web app config). Never commit .env.local.
 
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDWnn6hk2yEODKrgGkW9LNFd1zVu5mrdu8",
-  authDomain: "grocery-shopping-list-ff7b5.firebaseapp.com",
-  projectId: "grocery-shopping-list-ff7b5",
-  storageBucket: "grocery-shopping-list-ff7b5.firebasestorage.app",
-  messagingSenderId: "681935409933",
-  appId: "1:681935409933:web:9db551d4238f64e4b85644",
-  measurementId: "G-5NJBDFHR3J"
+const required = {
+  REACT_APP_FIREBASE_API_KEY: process.env.REACT_APP_FIREBASE_API_KEY,
+  REACT_APP_FIREBASE_AUTH_DOMAIN: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  REACT_APP_FIREBASE_PROJECT_ID: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  REACT_APP_FIREBASE_STORAGE_BUCKET: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  REACT_APP_FIREBASE_MESSAGING_SENDER_ID: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  REACT_APP_FIREBASE_APP_ID: process.env.REACT_APP_FIREBASE_APP_ID,
 };
+
+const missing = Object.entries(required)
+  .filter(([, v]) => !v)
+  .map(([k]) => k);
+
+if (missing.length > 0) {
+  throw new Error(
+    `Firebase env vars missing: ${missing.join(", ")}. Copy .env.example to .env.local and set them.`
+  );
+}
+
+const firebaseConfig = {
+  apiKey: required.REACT_APP_FIREBASE_API_KEY,
+  authDomain: required.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: required.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: required.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: required.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: required.REACT_APP_FIREBASE_APP_ID,
+};
+
+if (process.env.REACT_APP_FIREBASE_MEASUREMENT_ID) {
+  firebaseConfig.measurementId = process.env.REACT_APP_FIREBASE_MEASUREMENT_ID;
+}
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
