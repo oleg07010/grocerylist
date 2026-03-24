@@ -20,7 +20,9 @@ const missing = Object.entries(required)
 
 if (missing.length > 0) {
   throw new Error(
-    `Firebase env vars missing: ${missing.join(", ")}. Copy .env.example to .env.local and set them.`
+    `Firebase env vars missing: ${missing.join(
+      ", "
+    )}. Local: copy .env.example to .env.local (same folder as package.json) and restart npm start. Production (e.g. Vercel): add the same REACT_APP_* names under Project → Settings → Environment Variables, then redeploy — .env.local is not deployed.`
   );
 }
 
