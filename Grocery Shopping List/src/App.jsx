@@ -12,7 +12,6 @@ import {
   Button, Dialog, DialogTitle, DialogContent, DialogActions,
   Snackbar, Alert, Chip, Divider, Tooltip, Paper, InputAdornment,
   CircularProgress, Select, MenuItem, FormControl, InputLabel,
-  FormControlLabel, Link,
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
@@ -73,8 +72,6 @@ export default function App() {
   const [renameSectionTarget, setRenameSectionTarget] = useState(null);
   const [renameSectionValue, setRenameSectionValue] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
-  /** item id -> if true, uncheck that item when user confirms reset */
-  const [resetUncheckIds, setResetUncheckIds] = useState({});
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
@@ -157,32 +154,21 @@ export default function App() {
     setEditOpen(false); showSnack("Item updated!");
   };
 
-  const openResetDialog = () => {
-    const checked = items.filter((i) => i.checked);
-    const sel = {};
-    checked.forEach((i) => {
-      sel[i.id] = !i.skipReset;
-    });
-    setResetUncheckIds(sel);
-    setResetOpen(true);
-  };
-
   const handleReset = async () => {
-    const ids = Object.entries(resetUncheckIds).filter(([, v]) => v).map(([id]) => id);
-    if (ids.length === 0) {
+    const toUncheck = items.filter((i) => i.checked && !i.skipReset);
+    if (toUncheck.length === 0) {
       setResetOpen(false);
+      showSnack("Nothing to reset — all checked items are pinned.", "info");
       return;
     }
     const batch = writeBatch(db);
-    ids.forEach((id) => batch.update(doc(db, "groceries", id), { checked: false }));
+    toUncheck.forEach((i) => batch.update(doc(db, "groceries", i.id), { checked: false }));
     await batch.commit();
     setResetOpen(false);
-    setResetUncheckIds({});
-    showSnack(`${ids.length} item(s) unchecked — fresh start! 🛒`);
+    showSnack(`${toUncheck.length} item(s) unchecked. Pinned items stayed checked.`);
   };
 
-  const checkedItems = items.filter((i) => i.checked);
-  const resetSelectedCount = Object.values(resetUncheckIds).filter(Boolean).length;
+  const resettableCount = items.filter((i) => i.checked && !i.skipReset).length;
 
   const handleAddSection = async () => {
     const name = newSectionName.trim();
@@ -307,15 +293,15 @@ export default function App() {
 
           {/* Global Reset above search & add section */}
           <Box sx={{ mb: 2 }}>
-            <Tooltip title="Choose which checked items to clear for your next trip">
+            <Tooltip title="Uncheck completed items. Pinned items stay checked.">
               <span>
                 <Button
                   variant="outlined"
                   color="primary"
                   fullWidth
                   startIcon={<RestartAltIcon />}
-                  onClick={openResetDialog}
-                  disabled={doneCount === 0}
+                  onClick={() => setResetOpen(true)}
+                  disabled={resettableCount === 0}
                   sx={{
                     "&:hover": { bgcolor: "rgba(13, 148, 136, 0.06)" },
                     "&.Mui-disabled": {
@@ -519,73 +505,14 @@ export default function App() {
           </DialogActions>
         </Dialog>
 
-        {/* Reset — pick which checked items to clear */}
-        <Dialog open={resetOpen} onClose={() => setResetOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Reset checked items</DialogTitle>
+        {/* Reset — uncheck all checked items except pinned */}
+        <Dialog open={resetOpen} onClose={() => setResetOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle>Reset checked items?</DialogTitle>
           <DialogContent>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              Choose which checked items to clear for your next trip. Staples start unchecked; turn them on if you used them up.
+            <Typography variant="body2" color="text.secondary">
+              This will uncheck {resettableCount} completed item{resettableCount === 1 ? "" : "s"} for your next trip.
+              Pinned items stay checked. Nothing is deleted.
             </Typography>
-            <Box sx={{ display: "flex", gap: 2, mb: 1 }}>
-              <Link
-                component="button"
-                type="button"
-                variant="body2"
-                onClick={() => {
-                  const sel = {};
-                  checkedItems.forEach((i) => { sel[i.id] = true; });
-                  setResetUncheckIds(sel);
-                }}
-                sx={{ cursor: "pointer" }}
-              >
-                Select all
-              </Link>
-              <Link
-                component="button"
-                type="button"
-                variant="body2"
-                onClick={() => {
-                  const sel = {};
-                  checkedItems.forEach((i) => { sel[i.id] = false; });
-                  setResetUncheckIds(sel);
-                }}
-                sx={{ cursor: "pointer" }}
-              >
-                Select none
-              </Link>
-            </Box>
-            <List
-              dense
-              sx={{
-                maxHeight: 280,
-                overflow: "auto",
-                border: "1px solid",
-                borderColor: "divider",
-                borderRadius: 1,
-              }}
-            >
-              {checkedItems.map((item) => (
-                <ListItem key={item.id} disablePadding sx={{ px: 1 }}>
-                  <FormControlLabel
-                    sx={{ flex: 1, mr: 0, alignItems: "flex-start" }}
-                    control={
-                      <Checkbox
-                        checked={!!resetUncheckIds[item.id]}
-                        onChange={() =>
-                          setResetUncheckIds((prev) => ({ ...prev, [item.id]: !prev[item.id] }))
-                        }
-                      />
-                    }
-                    label={
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, pt: 0.9 }}>
-                        <span>{item.name}</span>
-                        {item.skipReset && <PushPinIcon fontSize="small" color="action" />}
-                      </Box>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setResetOpen(false)} color="inherit">Cancel</Button>
@@ -594,9 +521,9 @@ export default function App() {
               color="secondary"
               onClick={handleReset}
               startIcon={<RestartAltIcon />}
-              disabled={resetSelectedCount === 0}
+              disabled={resettableCount === 0}
             >
-              Reset selected ({resetSelectedCount})
+              Reset
             </Button>
           </DialogActions>
         </Dialog>
