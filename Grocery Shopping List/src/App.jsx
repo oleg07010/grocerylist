@@ -12,6 +12,7 @@ import {
   Button, Dialog, DialogTitle, DialogContent, DialogActions,
   Snackbar, Alert, Chip, Divider, Tooltip, Paper, InputAdornment,
   CircularProgress, Select, MenuItem, FormControl, InputLabel,
+  FormControlLabel, Link,
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
@@ -25,15 +26,16 @@ import SearchIcon from "@mui/icons-material/Search";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
+import PushPinIcon from "@mui/icons-material/PushPin";
 
 const theme = createTheme({
   palette: {
     mode: "light",
-    primary: { main: "#2d6a4f" },
-    secondary: { main: "#f4a261" },
-    background: { default: "#f8f9f4", paper: "#ffffff" },
-    success: { main: "#52b788" },
-    error: { main: "#e63946" },
+    primary: { main: "#0d9488", light: "#2dd4bf", dark: "#0f766e" },
+    secondary: { main: "#f59e0b", light: "#fbbf24", dark: "#d97706" },
+    background: { default: "#f0fdfa", paper: "#ffffff" },
+    success: { main: "#14b8a6" },
+    error: { main: "#e11d48" },
   },
   typography: {
     fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
@@ -63,6 +65,7 @@ export default function App() {
   const [editName, setEditName] = useState("");
   const [editQty, setEditQty] = useState("");
   const [editSection, setEditSection] = useState(DEFAULT_SECTION);
+  const [editSkipReset, setEditSkipReset] = useState(false);
 
   const [addSectionOpen, setAddSectionOpen] = useState(false);
   const [newSectionName, setNewSectionName] = useState("");
@@ -70,6 +73,8 @@ export default function App() {
   const [renameSectionTarget, setRenameSectionTarget] = useState(null);
   const [renameSectionValue, setRenameSectionValue] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
+  /** item id -> if true, uncheck that item when user confirms reset */
+  const [resetUncheckIds, setResetUncheckIds] = useState({});
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
@@ -119,7 +124,7 @@ export default function App() {
     const sectionItems = items.filter((i) => (i.sectionId || generalSectionId) === newSection);
     const maxOrder = sectionItems.length > 0 ? Math.max(...sectionItems.map((i) => i.order ?? 0)) : -1;
     await addDoc(collection(db, "groceries"), {
-      name, qty: newQty.trim() || "", checked: false,
+      name, qty: newQty.trim() || "", checked: false, skipReset: false,
       sectionId: newSection, order: maxOrder + 1, createdAt: serverTimestamp(),
     });
     setNewItem(""); setNewQty("");
@@ -137,6 +142,7 @@ export default function App() {
   const handleEditOpen = (item) => {
     setEditItem(item); setEditName(item.name);
     setEditQty(item.qty || ""); setEditSection(item.sectionId || generalSectionId);
+    setEditSkipReset(!!item.skipReset);
     setEditOpen(true);
   };
 
@@ -144,18 +150,37 @@ export default function App() {
     if (!editName.trim()) return;
     await updateDoc(doc(db, "groceries", editItem.id), {
       name: editName.trim(), qty: editQty.trim(), sectionId: editSection,
+      skipReset: editSkipReset,
     });
     setEditOpen(false); showSnack("Item updated!");
   };
 
-  const handleReset = async () => {
+  const openResetDialog = () => {
     const checked = items.filter((i) => i.checked);
+    const sel = {};
+    checked.forEach((i) => {
+      sel[i.id] = !i.skipReset;
+    });
+    setResetUncheckIds(sel);
+    setResetOpen(true);
+  };
+
+  const handleReset = async () => {
+    const ids = Object.entries(resetUncheckIds).filter(([, v]) => v).map(([id]) => id);
+    if (ids.length === 0) {
+      setResetOpen(false);
+      return;
+    }
     const batch = writeBatch(db);
-    checked.forEach((i) => batch.update(doc(db, "groceries", i.id), { checked: false }));
+    ids.forEach((id) => batch.update(doc(db, "groceries", id), { checked: false }));
     await batch.commit();
     setResetOpen(false);
-    showSnack(`${checked.length} item(s) unchecked — fresh start! 🛒`);
+    setResetUncheckIds({});
+    showSnack(`${ids.length} item(s) unchecked — fresh start! 🛒`);
   };
+
+  const checkedItems = items.filter((i) => i.checked);
+  const resetSelectedCount = Object.values(resetUncheckIds).filter(Boolean).length;
 
   const handleAddSection = async () => {
     const name = newSectionName.trim();
@@ -237,9 +262,9 @@ export default function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ minHeight: "100vh", pb: 8, background: "linear-gradient(160deg, #e9f5ee 0%, #f8f9f4 50%)" }}>
+      <Box sx={{ minHeight: "100vh", pb: 8, background: "linear-gradient(160deg, #ccfbf1 0%, #f0fdfa 55%)" }}>
         {/* Header */}
-        <Box sx={{ color: "#fff", py: 4, px: 2, mb: 4, background: "linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%)" }}>
+        <Box sx={{ color: "#fff", py: 4, px: 2, mb: 4, background: "linear-gradient(135deg, #115e59 0%, #0d9488 100%)" }}>
           <Container maxWidth="sm">
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.5 }}>
               <ShoppingCartIcon sx={{ fontSize: 34 }} />
@@ -280,24 +305,20 @@ export default function App() {
 
           {/* Global Reset above search & add section */}
           <Box sx={{ mb: 2 }}>
-            <Tooltip title="Uncheck all items (reset for new week)">
+            <Tooltip title="Choose which checked items to clear for your next trip">
               <span>
                 <Button
                   variant="outlined"
+                  color="primary"
                   fullWidth
                   startIcon={<RestartAltIcon />}
-                  onClick={() => setResetOpen(true)}
+                  onClick={openResetDialog}
                   disabled={doneCount === 0}
                   sx={{
-                    color: "#1976d2",
-                    borderColor: "#1976d2",
-                    "&:hover": {
-                      borderColor: "#1565c0",
-                      bgcolor: "rgba(25, 118, 210, 0.04)",
-                    },
+                    "&:hover": { bgcolor: "rgba(13, 148, 136, 0.06)" },
                     "&.Mui-disabled": {
-                      color: "rgba(25, 118, 210, 0.5)",
-                      borderColor: "rgba(25, 118, 210, 0.3)",
+                      color: "rgba(13, 148, 136, 0.45)",
+                      borderColor: "rgba(13, 148, 136, 0.28)",
                     },
                   }}
                 >
@@ -360,7 +381,7 @@ export default function App() {
                               <Droppable droppableId={section.id} type="ITEM">
                                 {(dropProv, dropSnap) => (
                                   <List ref={dropProv.innerRef} {...dropProv.droppableProps} disablePadding
-                                    sx={{ minHeight: 48, bgcolor: dropSnap.isDraggingOver ? "rgba(45,106,79,0.06)" : "transparent", transition: "background 0.2s" }}>
+                                    sx={{ minHeight: 48, bgcolor: dropSnap.isDraggingOver ? "rgba(13,148,136,0.08)" : "transparent", transition: "background 0.2s" }}>
                                     {sectionItems.length === 0 && !dropSnap.isDraggingOver && (
                                       <Box sx={{ py: 2, textAlign: "center", color: "text.disabled" }}>
                                         <Typography variant="caption">{search ? "No matches" : "Drop items here or add one above"}</Typography>
@@ -372,7 +393,7 @@ export default function App() {
                                           <Box>
                                             {index > 0 && <Divider component="div" />}
                                             <ListItem ref={dragProv.innerRef} {...dragProv.draggableProps}
-                                              sx={{ bgcolor: dragSnap.isDragging ? "rgba(45,106,79,0.08)" : "transparent", opacity: item.checked ? 0.55 : 1, "&:hover": { bgcolor: "action.hover" }, transition: "background 0.15s" }}>
+                                              sx={{ bgcolor: dragSnap.isDragging ? "rgba(13,148,136,0.1)" : "transparent", opacity: item.checked ? 0.55 : 1, "&:hover": { bgcolor: "action.hover" }, transition: "background 0.15s" }}>
                                               <Box {...dragProv.dragHandleProps}
                                                 sx={{ display: "flex", alignItems: "center", mr: 0.5, color: "text.disabled", cursor: "grab", "&:hover": { color: "text.secondary" } }}>
                                                 <DragIndicatorIcon fontSize="small" />
@@ -382,8 +403,13 @@ export default function App() {
                                               </ListItemIcon>
                                               <ListItemText
                                                 primary={
-                                                  <Typography sx={{ textDecoration: item.checked ? "line-through" : "none", fontWeight: 500, color: item.checked ? "text.disabled" : "text.primary", fontSize: "0.95rem" }}>
+                                                  <Typography component="span" sx={{ textDecoration: item.checked ? "line-through" : "none", fontWeight: 500, color: item.checked ? "text.disabled" : "text.primary", fontSize: "0.95rem", display: "inline-flex", alignItems: "center", gap: 0.5 }}>
                                                     {item.name}
+                                                    {item.skipReset && (
+                                                      <Tooltip title="Staple — skipped by default when you reset">
+                                                        <PushPinIcon sx={{ fontSize: 16, color: "text.secondary", flexShrink: 0 }} />
+                                                      </Tooltip>
+                                                    )}
                                                   </Typography>
                                                 }
                                                 secondary={item.qty ? <Chip label={item.qty} size="small" variant="outlined" sx={{ mt: 0.3, height: 18, fontSize: 11 }} /> : null}
@@ -436,6 +462,16 @@ export default function App() {
                 ))}
               </Select>
             </FormControl>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={editSkipReset}
+                  onChange={(e) => setEditSkipReset(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Staple — stays checked when I reset (e.g. ketchup, spices)"
+            />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setEditOpen(false)} color="inherit">Cancel</Button>
@@ -469,17 +505,85 @@ export default function App() {
           </DialogActions>
         </Dialog>
 
-        {/* Reset Confirm Dialog */}
-        <Dialog open={resetOpen} onClose={() => setResetOpen(false)} maxWidth="xs" fullWidth>
-          <DialogTitle>Reset checked items?</DialogTitle>
+        {/* Reset — pick which checked items to clear */}
+        <Dialog open={resetOpen} onClose={() => setResetOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Reset checked items</DialogTitle>
           <DialogContent>
-            <Typography variant="body2" color="text.secondary">
-              This will uncheck all {doneCount} completed item(s) so you can reuse the list for a new shopping trip. Items won't be deleted.
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              Choose which checked items to clear for your next trip. Staples start unchecked; turn them on if you used them up.
             </Typography>
+            <Box sx={{ display: "flex", gap: 2, mb: 1 }}>
+              <Link
+                component="button"
+                type="button"
+                variant="body2"
+                onClick={() => {
+                  const sel = {};
+                  checkedItems.forEach((i) => { sel[i.id] = true; });
+                  setResetUncheckIds(sel);
+                }}
+                sx={{ cursor: "pointer" }}
+              >
+                Select all
+              </Link>
+              <Link
+                component="button"
+                type="button"
+                variant="body2"
+                onClick={() => {
+                  const sel = {};
+                  checkedItems.forEach((i) => { sel[i.id] = false; });
+                  setResetUncheckIds(sel);
+                }}
+                sx={{ cursor: "pointer" }}
+              >
+                Select none
+              </Link>
+            </Box>
+            <List
+              dense
+              sx={{
+                maxHeight: 280,
+                overflow: "auto",
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1,
+              }}
+            >
+              {checkedItems.map((item) => (
+                <ListItem key={item.id} disablePadding sx={{ px: 1 }}>
+                  <FormControlLabel
+                    sx={{ flex: 1, mr: 0, alignItems: "flex-start" }}
+                    control={
+                      <Checkbox
+                        checked={!!resetUncheckIds[item.id]}
+                        onChange={() =>
+                          setResetUncheckIds((prev) => ({ ...prev, [item.id]: !prev[item.id] }))
+                        }
+                      />
+                    }
+                    label={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, pt: 0.9 }}>
+                        <span>{item.name}</span>
+                        {item.skipReset && <PushPinIcon fontSize="small" color="action" />}
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setResetOpen(false)} color="inherit">Cancel</Button>
-            <Button variant="contained" color="secondary" onClick={handleReset} startIcon={<RestartAltIcon />}>Yes, Reset</Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleReset}
+              startIcon={<RestartAltIcon />}
+              disabled={resetSelectedCount === 0}
+            >
+              Reset selected ({resetSelectedCount})
+            </Button>
           </DialogActions>
         </Dialog>
 
