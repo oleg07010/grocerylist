@@ -27,6 +27,7 @@ import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import PushPinIcon from "@mui/icons-material/PushPin";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 
 const theme = createTheme({
   palette: {
@@ -65,7 +66,6 @@ export default function App() {
   const [editName, setEditName] = useState("");
   const [editQty, setEditQty] = useState("");
   const [editSection, setEditSection] = useState(DEFAULT_SECTION);
-  const [editSkipReset, setEditSkipReset] = useState(false);
 
   const [addSectionOpen, setAddSectionOpen] = useState(false);
   const [newSectionName, setNewSectionName] = useState("");
@@ -134,6 +134,10 @@ export default function App() {
   const handleToggle = async (item) =>
     updateDoc(doc(db, "groceries", item.id), { checked: !item.checked });
 
+  const handleTogglePin = async (item) => {
+    await updateDoc(doc(db, "groceries", item.id), { skipReset: !item.skipReset });
+  };
+
   const handleDelete = async (item) => {
     await deleteDoc(doc(db, "groceries", item.id));
     showSnack(`"${item.name}" removed`, "info");
@@ -142,7 +146,6 @@ export default function App() {
   const handleEditOpen = (item) => {
     setEditItem(item); setEditName(item.name);
     setEditQty(item.qty || ""); setEditSection(item.sectionId || generalSectionId);
-    setEditSkipReset(!!item.skipReset);
     setEditOpen(true);
   };
 
@@ -150,7 +153,6 @@ export default function App() {
     if (!editName.trim()) return;
     await updateDoc(doc(db, "groceries", editItem.id), {
       name: editName.trim(), qty: editQty.trim(), sectionId: editSection,
-      skipReset: editSkipReset,
     });
     setEditOpen(false); showSnack("Item updated!");
   };
@@ -403,25 +405,47 @@ export default function App() {
                                               </ListItemIcon>
                                               <ListItemText
                                                 primary={
-                                                  <Typography component="span" sx={{ textDecoration: item.checked ? "line-through" : "none", fontWeight: 500, color: item.checked ? "text.disabled" : "text.primary", fontSize: "0.95rem", display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+                                                  <Typography sx={{ textDecoration: item.checked ? "line-through" : "none", fontWeight: 500, color: item.checked ? "text.disabled" : "text.primary", fontSize: "0.95rem" }}>
                                                     {item.name}
-                                                    {item.skipReset && (
-                                                      <Tooltip title="Staple — skipped by default when you reset">
-                                                        <PushPinIcon sx={{ fontSize: 16, color: "text.secondary", flexShrink: 0 }} />
-                                                      </Tooltip>
-                                                    )}
                                                   </Typography>
                                                 }
                                                 secondary={item.qty ? <Chip label={item.qty} size="small" variant="outlined" sx={{ mt: 0.3, height: 18, fontSize: 11 }} /> : null}
                                               />
                                               <ListItemSecondaryAction>
+                                                <Tooltip title={item.skipReset ? "Unpin — include in reset by default" : "Pin — skip on reset"}>
+                                                  <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleTogglePin(item);
+                                                    }}
+                                                    sx={{ mr: 0.25, color: item.skipReset ? "primary.main" : "text.disabled" }}
+                                                    aria-pressed={!!item.skipReset}
+                                                  >
+                                                    {item.skipReset ? <PushPinIcon fontSize="small" /> : <PushPinOutlinedIcon fontSize="small" />}
+                                                  </IconButton>
+                                                </Tooltip>
                                                 <Tooltip title="Edit">
-                                                  <IconButton size="small" onClick={() => handleEditOpen(item)} sx={{ mr: 0.5, color: "primary.main" }}>
+                                                  <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleEditOpen(item);
+                                                    }}
+                                                    sx={{ mr: 0.5, color: "primary.main" }}
+                                                  >
                                                     <EditIcon fontSize="small" />
                                                   </IconButton>
                                                 </Tooltip>
                                                 <Tooltip title="Delete">
-                                                  <IconButton size="small" onClick={() => handleDelete(item)} sx={{ color: "error.main" }}>
+                                                  <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleDelete(item);
+                                                    }}
+                                                    sx={{ color: "error.main" }}
+                                                  >
                                                     <DeleteIcon fontSize="small" />
                                                   </IconButton>
                                                 </Tooltip>
@@ -462,16 +486,6 @@ export default function App() {
                 ))}
               </Select>
             </FormControl>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={editSkipReset}
-                  onChange={(e) => setEditSkipReset(e.target.checked)}
-                  color="primary"
-                />
-              }
-              label="Staple — stays checked when I reset (e.g. ketchup, spices)"
-            />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
             <Button onClick={() => setEditOpen(false)} color="inherit">Cancel</Button>
