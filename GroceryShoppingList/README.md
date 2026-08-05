@@ -93,10 +93,10 @@ git push -u origin main
 
 | Feature | How |
 |---|---|
-| **Add item** | Type name + optional qty → click Add (or press Enter) |
+| **Add item** | Type name + optional details → click Add (or press Enter) |
 | **Check off** | Click the checkbox when you buy something |
-| **Edit item** | Click the ✏️ pencil icon |
-| **Delete item** | Click the 🗑️ trash icon |
+| **Edit / Delete item** | Open the item's **⋯** menu → Edit or Delete |
+| **Pin item** | Click the 📌 pin to keep it checked through a reset |
 | **Reset for new week** | Click **Reset** button — unchecks all items (nothing deleted) |
 | **Search** | Type in the search box to filter the list |
 

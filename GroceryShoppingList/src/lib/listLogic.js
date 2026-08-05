@@ -6,6 +6,28 @@
 // exactly — including the `order ?? 0` fallbacks and the `sectionId || generalSectionId`
 // default-section resolution — so extracting them is behavior-preserving.
 
+/**
+ * Legacy items packed the whole text into `name` with an empty `qty`. When
+ * `name` is long (>28 chars) and `qty` is empty, split it into {name, qty} on
+ * the first separator found, trying ";", " — ", then "," in that priority. Both
+ * sides are trimmed. With no separator (or when the item already has a `qty`, or
+ * the name is short) the item is returned unchanged. Idempotent: after a split
+ * `qty` is non-empty, so a second pass is a no-op.
+ */
+export const splitLegacyName = (name, qty) => {
+  if ((qty && qty.trim()) || !name || name.length <= 28) return { name, qty };
+  for (const sep of [";", " — ", ","]) {
+    const idx = name.indexOf(sep);
+    if (idx !== -1) {
+      return {
+        name: name.slice(0, idx).trim(),
+        qty: name.slice(idx + sep.length).trim(),
+      };
+    }
+  }
+  return { name, qty };
+};
+
 /** Case-insensitive substring match on item name (search box filter). */
 export const filterItems = (items, search) =>
   items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));

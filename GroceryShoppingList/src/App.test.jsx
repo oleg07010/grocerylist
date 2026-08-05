@@ -113,15 +113,34 @@ test("toggling an item records checked + checkedAt", async () => {
   );
 });
 
-test("deleting an item removes it from the groceries collection", async () => {
+test("deleting an item (via the ⋯ menu) removes it from the groceries collection", async () => {
   await renderApp([
     { id: "i1", name: "Milk", qty: "", checked: false, skipReset: false, sectionId: "gen", order: 0 },
   ]);
 
-  fireEvent.click(screen.getByRole("button", { name: "Delete item" }));
+  // Delete now lives inside the per-row overflow menu, not on the row itself.
+  fireEvent.click(screen.getByRole("button", { name: "Item options" }));
+  fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
 
   await waitFor(() => expect(mockDeleteDoc).toHaveBeenCalledTimes(1));
   expect(mockDeleteDoc).toHaveBeenCalledWith({ coll: "groceries", id: "i1" });
+});
+
+test("splits a legacy packed name into a title and details for display", async () => {
+  await renderApp([
+    {
+      id: "i1",
+      name: "Granola; Purely Elizabeth brand",
+      qty: "",
+      checked: false,
+      skipReset: false,
+      sectionId: "gen",
+      order: 0,
+    },
+  ]);
+
+  expect(screen.getByText("Granola")).toBeInTheDocument();
+  expect(screen.getByText("Purely Elizabeth brand")).toBeInTheDocument();
 });
 
 test("reset button is disabled when every checked item is pinned", async () => {

@@ -1,4 +1,5 @@
 import {
+  splitLegacyName,
   filterItems,
   countDone,
   resettableItems,
@@ -11,6 +12,73 @@ import {
   reorderSections,
   reorderItems,
 } from "./listLogic";
+
+describe("splitLegacyName", () => {
+  it("leaves the item alone when qty is already present", () => {
+    const name = "Granola; Purely Elizabeth brand"; // >28 chars, has a separator
+    expect(splitLegacyName(name, "1 bag")).toEqual({ name, qty: "1 bag" });
+    // whitespace-only qty still counts as empty and may split
+    expect(splitLegacyName(name, "   ")).toEqual({
+      name: "Granola",
+      qty: "Purely Elizabeth brand",
+    });
+  });
+
+  it("leaves short names alone even with a separator", () => {
+    expect(splitLegacyName("Milk, 2%", "")).toEqual({ name: "Milk, 2%", qty: "" });
+  });
+
+  it("leaves long names alone when there is no separator", () => {
+    const name = "Extra large organic free range eggs"; // 36 chars, no separator
+    expect(splitLegacyName(name, "")).toEqual({ name, qty: "" });
+  });
+
+  it("leaves empty/missing names alone", () => {
+    expect(splitLegacyName("", "")).toEqual({ name: "", qty: "" });
+    expect(splitLegacyName(undefined, "")).toEqual({ name: undefined, qty: "" });
+  });
+
+  it("splits on the first semicolon", () => {
+    expect(splitLegacyName("Granola; Purely Elizabeth brand", "")).toEqual({
+      name: "Granola",
+      qty: "Purely Elizabeth brand",
+    });
+  });
+
+  it("splits on an em-dash separator", () => {
+    expect(splitLegacyName("Sourdough loaf — the seeded bakery one", "")).toEqual({
+      name: "Sourdough loaf",
+      qty: "the seeded bakery one",
+    });
+  });
+
+  it("splits on a comma", () => {
+    expect(splitLegacyName("Whole wheat sandwich bread, thin sliced", "")).toEqual({
+      name: "Whole wheat sandwich bread",
+      qty: "thin sliced",
+    });
+  });
+
+  it("prefers ';' over ',' regardless of position", () => {
+    // comma appears first positionally, but ';' has priority
+    expect(splitLegacyName("Cereal, granola; the good kind here", "")).toEqual({
+      name: "Cereal, granola",
+      qty: "the good kind here",
+    });
+  });
+
+  it("trims whitespace on both sides of the split", () => {
+    expect(splitLegacyName("Bananas ;   very ripe ones please", "")).toEqual({
+      name: "Bananas",
+      qty: "very ripe ones please",
+    });
+  });
+
+  it("is idempotent — running twice equals running once", () => {
+    const once = splitLegacyName("Granola; Purely Elizabeth brand", "");
+    expect(splitLegacyName(once.name, once.qty)).toEqual(once);
+  });
+});
 
 describe("filterItems", () => {
   const items = [

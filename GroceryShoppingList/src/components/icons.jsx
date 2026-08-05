@@ -9,6 +9,7 @@ import {
   ListPlus,
   RefreshCw,
   MoreHorizontal,
+  MoreVertical,
   Pin,
   Pencil,
   Trash2,
@@ -31,6 +32,7 @@ export const SearchIcon = wrap(Search);
 export const AddSectionIcon = wrap(ListPlus);
 export const ResetIcon = wrap(RefreshCw);
 export const MoreIcon = wrap(MoreHorizontal);
+export const MoreVerticalIcon = wrap(MoreVertical);
 export const PinIcon = wrap(Pin);
 export const EditIcon = wrap(Pencil);
 export const DeleteIcon = wrap(Trash2);

@@ -1,15 +1,20 @@
 // src/components/ItemRow.jsx
 //
-// One 58px-tall grocery row. Owns the check animation (checkbox pop + checkmark
-// fade + dim) and the sink-to-bottom reorder. The reorder uses framer-motion's
-// `layout`, gated OFF while this row is actively dragged so @hello-pangea/dnd
-// keeps sole control of the transform during a drag.
+// One grocery row (min 58px tall). Owns the check animation (checkbox pop +
+// checkmark fade + dim) and the sink-to-bottom reorder. The reorder uses
+// framer-motion's `layout`, gated OFF while this row is actively dragged so
+// @hello-pangea/dnd keeps sole control of the transform during a drag.
+//
+// Layout: [drag handle] [checkbox] [text column: title + wrapping details]
+// [actions: pin, ⋯]. The text column is a vertical stack so a long `qty`
+// (brand / notes) wraps under the title instead of squeezing it to an ellipsis.
 
 import { useEffect, useRef } from "react";
 import { Box, IconButton, Typography } from "@mui/material";
 import { motion, useAnimationControls } from "framer-motion";
 import { tokens } from "../theme/tokens";
-import { DragDots, CheckmarkIcon, PinIcon, EditIcon, DeleteIcon } from "./icons";
+import { DragDots, CheckmarkIcon, PinIcon } from "./icons";
+import ItemOverflowMenu from "./ItemOverflowMenu";
 
 const actionBtnSx = {
   width: 30,
@@ -63,11 +68,11 @@ export default function ItemRow({
       <Box
         sx={{
           display: "flex",
-          alignItems: "center",
-          gap: "11px",
-          height: 58,
-          pl: "12px",
-          pr: "10px",
+          alignItems: "flex-start",
+          gap: "12px",
+          minHeight: 58,
+          p: "13px 12px",
+          boxSizing: "border-box",
           bgcolor: snapshot.isDragging ? tokens.color.bg : tokens.color.surface,
           borderTop: isFirst ? "none" : `1px solid ${tokens.color.hairline}`,
         }}
@@ -78,6 +83,7 @@ export default function ItemRow({
           sx={{
             display: "flex",
             alignItems: "center",
+            alignSelf: "center",
             cursor: "grab",
             opacity: checked ? 0 : 1,
             pointerEvents: checked ? "none" : "auto",
@@ -87,7 +93,7 @@ export default function ItemRow({
           <DragDots />
         </Box>
 
-        {/* Checkbox */}
+        {/* Checkbox — top-aligned to the title's first line, not a paragraph's middle */}
         <Box
           component="button"
           type="button"
@@ -103,13 +109,15 @@ export default function ItemRow({
             cursor: "pointer",
             flexShrink: 0,
             display: "flex",
+            alignSelf: "flex-start",
+            mt: "1px",
           }}
         >
           <motion.div animate={controls}>
             <Box
               sx={{
-                width: 21,
-                height: 21,
+                width: 22,
+                height: 22,
                 borderRadius: `${tokens.radius.check}px`,
                 border: `1.6px solid ${
                   checked ? tokens.color.accent : tokens.color.checkboxBorder
@@ -135,29 +143,28 @@ export default function ItemRow({
           </motion.div>
         </Box>
 
-        {/* Name + inline quantity */}
+        {/* Title + wrapping details */}
         <Box
           sx={{
             flex: 1,
             minWidth: 0,
-            overflow: "hidden",
             display: "flex",
-            alignItems: "baseline",
-            gap: "7px",
+            flexDirection: "column",
+            gap: "4px",
           }}
         >
           <Typography
             sx={{
-              fontSize: 15.5,
-              lineHeight: 1.25,
+              fontSize: 16,
+              fontWeight: 500,
+              lineHeight: 1.3,
+              letterSpacing: "-0.005em",
               color: checked ? tokens.color.inkMuted : tokens.color.ink,
               textDecoration: checked ? "line-through" : "none",
               textDecorationColor: tokens.color.strikethrough,
               minWidth: 0,
-              flexShrink: 1,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
             }}
           >
             {item.name}
@@ -165,12 +172,15 @@ export default function ItemRow({
           {item.qty ? (
             <Typography
               sx={{
-                fontSize: 12.5,
-                color: tokens.color.textTertiary,
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                fontSize: 13.5,
+                fontWeight: 400,
+                lineHeight: 1.5,
+                // Darker than a decorative gray — this is a shopping instruction
+                // that has to stay legible in a store. Never struck through.
+                color: checked ? tokens.color.textTertiary : tokens.color.textSecondary,
+                minWidth: 0,
+                overflowWrap: "anywhere",
+                wordBreak: "break-word",
               }}
             >
               {item.qty}
@@ -178,8 +188,8 @@ export default function ItemRow({
           ) : null}
         </Box>
 
-        {/* Actions */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: "1px", flexShrink: 0 }}>
+        {/* Actions — top-aligned with the title */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
           <IconButton
             aria-label={pinned ? "Unpin item" : "Pin item"}
             aria-pressed={pinned}
@@ -193,20 +203,7 @@ export default function ItemRow({
           >
             <PinIcon size={16} />
           </IconButton>
-          <IconButton
-            aria-label="Edit item"
-            onClick={() => onEdit(item)}
-            sx={{ ...actionBtnSx, "&:active": { color: tokens.color.ink, bgcolor: tokens.color.pressEditBg } }}
-          >
-            <EditIcon size={15} />
-          </IconButton>
-          <IconButton
-            aria-label="Delete item"
-            onClick={() => onDelete(item)}
-            sx={{ ...actionBtnSx, "&:active": { color: tokens.color.danger, bgcolor: tokens.color.pressDeleteBg } }}
-          >
-            <DeleteIcon size={15} />
-          </IconButton>
+          <ItemOverflowMenu onEdit={() => onEdit(item)} onDelete={() => onDelete(item)} />
         </Box>
       </Box>
     </motion.div>

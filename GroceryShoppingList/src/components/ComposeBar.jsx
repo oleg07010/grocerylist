@@ -37,7 +37,7 @@ export default function ComposeBar({
           <InputBase
             value={qty}
             onChange={(e) => onQtyChange(e.target.value)}
-            placeholder="Qty / note (optional)"
+            placeholder="Details — brand, size, notes (optional)"
             sx={{
               flex: 1,
               height: 38,

@@ -5,6 +5,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import {
+  splitLegacyName,
   filterItems, countDone, countResettable, resettableItems,
   getGeneralSectionId, getSectionItems, nextItemOrder, nextSectionOrder,
   reconcileSelectedSection, reorderSections, reorderItems,
@@ -54,7 +55,14 @@ export default function App() {
   useEffect(() => {
     const qItems = query(collection(db, "groceries"), orderBy("order", "asc"));
     const unsubItems = onSnapshot(qItems, (snap) => {
-      setItems(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      // Read-time migration: legacy items packed the whole text into `name` with
+      // an empty `qty`. Split those into a title + details for display; the split
+      // persists the next time the item is edited (the dialog pre-fills it).
+      setItems(snap.docs.map((d) => {
+        const raw = { id: d.id, ...d.data() };
+        const { name, qty } = splitLegacyName(raw.name, raw.qty || "");
+        return { ...raw, name, qty };
+      }));
       setLoading(false);
     });
     const qSections = query(collection(db, "sections"), orderBy("order", "asc"));
@@ -271,8 +279,15 @@ export default function App() {
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Edit Item</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "16px !important" }}>
-          <TextField label="Item name" value={editName} onChange={(e) => setEditName(e.target.value)} fullWidth autoFocus />
-          <TextField label="Qty / note" value={editQty} onChange={(e) => setEditQty(e.target.value)} fullWidth />
+          <TextField label="Item" value={editName} onChange={(e) => setEditName(e.target.value)} fullWidth autoFocus />
+          <TextField
+            label="Details — brand, size, notes"
+            value={editQty}
+            onChange={(e) => setEditQty(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+          />
           <FormControl fullWidth>
             <InputLabel>Section</InputLabel>
             <Select value={editSection} label="Section" onChange={(e) => setEditSection(e.target.value)}>
