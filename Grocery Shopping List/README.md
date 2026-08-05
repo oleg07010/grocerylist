@@ -111,6 +111,46 @@ Just send her the Vercel URL. Both of you can:
 
 ---
 
+## 📱 iOS App (TestFlight)
+
+The same web app can run as a native iOS app via **Capacitor** — it wraps the
+production web build (`build/`) in a native shell. The iOS app reads the **same
+Firebase project**, so it shares one live list with the web version.
+
+**Prerequisites:** macOS with Xcode, CocoaPods, and a **paid Apple Developer
+Program** membership.
+
+Rebuild-and-open loop when you change the app:
+
+```bash
+npm run build          # rebuild the web bundle
+npx cap sync ios       # copy it into the iOS project + refresh plugins/pods
+npx cap open ios       # open ios/App/App.xcworkspace in Xcode
+```
+
+Then use Xcode to **Archive → Distribute → App Store Connect** and add testers.
+Full step-by-step (Apple account setup, signing, uploading, adding your wife as
+an internal tester) is in **[`TESTFLIGHT.md`](./TESTFLIGHT.md)**.
+
+- Bundle ID: `com.appassov.grocerysync`
+- Version: `1.0.0` (build `1`)
+
+---
+
+## Testing
+
+```bash
+CI=true npm test         # run all tests once (non-watch)
+npm test                 # interactive watch mode
+```
+
+- **`src/lib/listLogic.test.js`** — unit tests for the pure list logic
+  (search filter, section ordering, drag-reorder reindexing, reset/pin rules).
+- **`src/App.test.jsx`** — integration tests that render `<App/>` with Firestore
+  mocked and verify add / toggle / delete / search and the reset button state.
+
+---
+
 ## Optional: Secure Your Database (Recommended After Testing)
 
 By default Firebase is in "test mode" (anyone with the URL can read/write).
@@ -136,12 +176,21 @@ For a family app this is fine. If you ever want login-based access, let me know 
 ```
 grocery-app/
 ├── public/
-│   └── index.html
+│   └── index.html         ← viewport-fit=cover for iOS safe areas
 ├── src/
-│   ├── firebase.js   ← Put your Firebase config here
-│   ├── App.jsx       ← Main app (all UI + logic)
-│   └── index.js      ← Entry point
-├── vercel.json       ← Vercel routing config
+│   ├── firebase.js        ← Firebase config (from env vars)
+│   ├── App.jsx            ← Main app UI + Firestore wiring
+│   ├── index.js           ← Entry point (+ native status bar / splash)
+│   ├── lib/
+│   │   ├── listLogic.js   ← Pure list logic (filter, order, reorder, reset)
+│   │   └── listLogic.test.js
+│   ├── App.test.jsx       ← Integration tests (Firestore mocked)
+│   └── setupTests.js
+├── ios/                   ← Native iOS app (Capacitor) — see TESTFLIGHT.md
+├── resources/
+│   └── icon.png           ← 1024×1024 app icon source
+├── capacitor.config.ts    ← Capacitor config (bundle id, app name, webDir)
+├── vercel.json            ← Vercel routing config
 ├── package.json
 └── .gitignore
 ```
@@ -153,4 +202,6 @@ grocery-app/
 - **React 18** — UI framework
 - **Material UI v5** — Components & styling
 - **Firebase Firestore** — Real-time database (free tier: 50k reads + 20k writes/day)
-- **Vercel** — Hosting (free, unlimited)
+- **Vercel** — Web hosting (free, unlimited)
+- **Capacitor 7** — Wraps the web build into a native iOS app (see `TESTFLIGHT.md`)
+- **Jest + React Testing Library** — Unit & integration tests

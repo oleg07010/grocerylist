@@ -3,3 +3,17 @@ build/
 .env
 .env.local
 .DS_Store
+
+# Capacitor / iOS
+# The native project (ios/) IS committed, but these are build artifacts / secrets:
+ios/App/App/public/     # regenerated on every `npx cap sync` (copied web build)
+ios/App/Pods/           # CocoaPods, restored via `pod install`
+ios/App/build/
+ios/build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+# Never commit App Store Connect / signing secrets:
+*.p8
+*.p12
+*.mobileprovision

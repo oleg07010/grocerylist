@@ -4,6 +4,11 @@ import {
   doc, writeBatch, serverTimestamp, query, orderBy,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import {
+  filterItems, countDone, resettableItems, countResettable,
+  getGeneralSectionId, getSectionItems, nextItemOrder, nextSectionOrder,
+  reconcileSelectedSection, reorderSections, reorderItems,
+} from "./lib/listLogic";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 import {
@@ -95,34 +100,25 @@ export default function App() {
         setNewSection(ref.id);
       } else {
         setSections(fetched);
-        setNewSection((prev) => {
-          const ids = fetched.map((s) => s.id);
-          return ids.includes(prev) ? prev : ids[0];
-        });
+        setNewSection((prev) => reconcileSelectedSection(prev, fetched));
       }
     });
     return () => { unsubItems(); unsubSections(); };
   }, []);
 
   const showSnack = (msg, severity = "success") => setSnack({ open: true, msg, severity });
-  const filtered = items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
-  const doneCount = items.filter((i) => i.checked).length;
+  const filtered = filterItems(items, search);
+  const doneCount = countDone(items);
   // Find the real General section id from Firebase
-  const generalSectionId = sections.find((s) => s.isDefault)?.id || sections[0]?.id;
-
-  const getSectionItems = (sectionId) =>
-    filtered
-      .filter((i) => (i.sectionId || generalSectionId) === sectionId)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const generalSectionId = getGeneralSectionId(sections);
 
   const handleAdd = async () => {
     const name = newItem.trim();
     if (!name) return;
-    const sectionItems = items.filter((i) => (i.sectionId || generalSectionId) === newSection);
-    const maxOrder = sectionItems.length > 0 ? Math.max(...sectionItems.map((i) => i.order ?? 0)) : -1;
     await addDoc(collection(db, "groceries"), {
       name, qty: newQty.trim() || "", checked: false, skipReset: false,
-      sectionId: newSection, order: maxOrder + 1, createdAt: serverTimestamp(),
+      sectionId: newSection, order: nextItemOrder(items, newSection, generalSectionId),
+      createdAt: serverTimestamp(),
     });
     setNewItem(""); setNewQty("");
     showSnack(`"${name}" added!`);
@@ -155,7 +151,7 @@ export default function App() {
   };
 
   const handleReset = async () => {
-    const toUncheck = items.filter((i) => i.checked && !i.skipReset);
+    const toUncheck = resettableItems(items);
     if (toUncheck.length === 0) {
       setResetOpen(false);
       showSnack("Nothing to reset — all checked items are pinned.", "info");
@@ -168,13 +164,12 @@ export default function App() {
     showSnack(`${toUncheck.length} item(s) unchecked. Pinned items stayed checked.`);
   };
 
-  const resettableCount = items.filter((i) => i.checked && !i.skipReset).length;
+  const resettableCount = countResettable(items);
 
   const handleAddSection = async () => {
     const name = newSectionName.trim();
     if (!name) return;
-    const maxOrder = sections.length > 0 ? Math.max(...sections.map((s) => s.order ?? 0)) : -1;
-    await addDoc(collection(db, "sections"), { name, order: maxOrder + 1 });
+    await addDoc(collection(db, "sections"), { name, order: nextSectionOrder(sections) });
     setNewSectionName(""); setAddSectionOpen(false);
     showSnack(`Section "${name}" added!`);
   };
@@ -207,52 +202,28 @@ export default function App() {
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     if (type === "SECTION") {
-      const reordered = Array.from(sections);
-      const [moved] = reordered.splice(source.index, 1);
-      reordered.splice(destination.index, 0, moved);
       const batch = writeBatch(db);
-      reordered.forEach((s, idx) => {
-        batch.update(doc(db, "sections", s.id), { order: idx });
-      });
+      reorderSections(sections, source.index, destination.index).forEach(({ id, order }) =>
+        batch.update(doc(db, "sections", id), { order })
+      );
       await batch.commit();
       return;
     }
 
-    const sourceSectionId = source.droppableId;
-    const destSectionId = destination.droppableId;
-    const sourceItems = [...items]
-      .filter((i) => (i.sectionId || generalSectionId) === sourceSectionId)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const destItems = sourceSectionId === destSectionId ? sourceItems :
-      [...items]
-        .filter((i) => (i.sectionId || generalSectionId) === destSectionId)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-    const [movedItem] = sourceItems.splice(source.index, 1);
-
-    if (sourceSectionId === destSectionId) {
-      sourceItems.splice(destination.index, 0, movedItem);
-      const batch = writeBatch(db);
-      sourceItems.forEach((item, idx) =>
-        batch.update(doc(db, "groceries", item.id), { order: idx, sectionId: destSectionId })
-      );
-      await batch.commit();
-    } else {
-      destItems.splice(destination.index, 0, movedItem);
-      const batch = writeBatch(db);
-      sourceItems.forEach((item, idx) => batch.update(doc(db, "groceries", item.id), { order: idx }));
-      destItems.forEach((item, idx) =>
-        batch.update(doc(db, "groceries", item.id), { order: idx, sectionId: destSectionId })
-      );
-      await batch.commit();
-    }
+    // Item reorder (within or across sections). Each descriptor is { id, ...fields }
+    // where fields is the exact update payload ({ order } or { order, sectionId }).
+    const batch = writeBatch(db);
+    reorderItems(items, source, destination, generalSectionId).forEach(({ id, ...fields }) =>
+      batch.update(doc(db, "groceries", id), fields)
+    );
+    await batch.commit();
   };
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ minHeight: "100vh", pb: 8, background: "linear-gradient(160deg, #ccfbf1 0%, #f0fdfa 55%)" }}>
-        {/* Header */}
-        <Box sx={{ color: "#fff", py: 4, px: 2, mb: 4, background: "linear-gradient(135deg, #115e59 0%, #0d9488 100%)" }}>
+      <Box sx={{ minHeight: "100vh", pb: "calc(env(safe-area-inset-bottom) + 64px)", background: "linear-gradient(160deg, #ccfbf1 0%, #f0fdfa 55%)" }}>
+        {/* Header — top padding clears the iOS status bar / notch (env inset is 0 on web). */}
+        <Box sx={{ color: "#fff", pt: "calc(env(safe-area-inset-top) + 32px)", pb: 4, px: 2, mb: 4, background: "linear-gradient(135deg, #115e59 0%, #0d9488 100%)" }}>
           <Container maxWidth="sm">
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.5 }}>
               <ShoppingCartIcon sx={{ fontSize: 34 }} />
@@ -334,7 +305,7 @@ export default function App() {
                 {(provided) => (
                   <Box ref={provided.innerRef} {...provided.droppableProps}>
                     {sections.map((section, sectionIndex) => {
-                      const sectionItems = getSectionItems(section.id);
+                      const sectionItems = getSectionItems(filtered, section.id, generalSectionId);
                       const isDefault = !!section.isDefault;
                       return (
                         <Draggable key={section.id} draggableId={`section-${section.id}`} index={sectionIndex}>
