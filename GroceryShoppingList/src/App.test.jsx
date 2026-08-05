@@ -16,14 +16,14 @@ const mockCallbacks = {}; // { groceries: cb, sections: cb }
 jest.mock("./firebase", () => ({ db: {} }));
 
 jest.mock("firebase/firestore", () => ({
-  collection: (_db, name) => name, // use the collection name as the "ref"
-  query: (coll) => coll, // passthrough — a query "is" its collection name here
+  collection: (_db, name) => name,
+  query: (coll) => coll,
   orderBy: jest.fn(),
   doc: (_db, coll, id) => ({ coll, id }),
   serverTimestamp: () => "SERVER_TS",
   onSnapshot: (q, cb) => {
     mockCallbacks[q] = cb;
-    return () => {}; // unsubscribe
+    return () => {};
   },
   addDoc: (...a) => mockAddDoc(...a),
   updateDoc: (...a) => mockUpdateDoc(...a),
@@ -31,7 +31,7 @@ jest.mock("firebase/firestore", () => ({
   writeBatch: (...a) => mockWriteBatch(...a),
 }));
 
-// Drag-and-drop renders its children via render props; passthrough shims keep jsdom happy.
+// Drag-and-drop renders via render props; passthrough shims keep jsdom happy.
 jest.mock("@hello-pangea/dnd", () => ({
   DragDropContext: ({ children }) => children,
   Droppable: ({ children }) =>
@@ -82,8 +82,10 @@ test("renders the header and items from Firestore", async () => {
 test("adding an item writes to the groceries collection", async () => {
   await renderApp([]);
 
-  fireEvent.change(screen.getByLabelText("Item name"), { target: { value: "Eggs" } });
-  fireEvent.click(screen.getByRole("button", { name: "Add" }));
+  fireEvent.change(screen.getByPlaceholderText("Add an item…"), {
+    target: { value: "Eggs" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Add item" }));
 
   await waitFor(() => expect(mockAddDoc).toHaveBeenCalledTimes(1));
   const [collectionRef, payload] = mockAddDoc.mock.calls[0];
@@ -93,11 +95,11 @@ test("adding an item writes to the groceries collection", async () => {
     checked: false,
     skipReset: false,
     sectionId: "gen", // reconciled from the loaded sections
-    order: 0, // first item in an empty section
+    order: 0,
   });
 });
 
-test("toggling an item's checkbox updates its checked flag", async () => {
+test("toggling an item records checked + checkedAt", async () => {
   await renderApp([
     { id: "i1", name: "Milk", qty: "", checked: false, skipReset: false, sectionId: "gen", order: 0 },
   ]);
@@ -105,7 +107,10 @@ test("toggling an item's checkbox updates its checked flag", async () => {
   fireEvent.click(screen.getByRole("checkbox"));
 
   await waitFor(() => expect(mockUpdateDoc).toHaveBeenCalledTimes(1));
-  expect(mockUpdateDoc).toHaveBeenCalledWith({ coll: "groceries", id: "i1" }, { checked: true });
+  expect(mockUpdateDoc).toHaveBeenCalledWith(
+    { coll: "groceries", id: "i1" },
+    { checked: true, checkedAt: expect.any(Number) }
+  );
 });
 
 test("deleting an item removes it from the groceries collection", async () => {
@@ -113,9 +118,7 @@ test("deleting an item removes it from the groceries collection", async () => {
     { id: "i1", name: "Milk", qty: "", checked: false, skipReset: false, sectionId: "gen", order: 0 },
   ]);
 
-  // The trash IconButton has no text label; find it via the MUI icon's data-testid.
-  // (With a single default section, DeleteIcon is only used by the item's trash button.)
-  fireEvent.click(screen.getByTestId("DeleteIcon").closest("button"));
+  fireEvent.click(screen.getByRole("button", { name: "Delete item" }));
 
   await waitFor(() => expect(mockDeleteDoc).toHaveBeenCalledTimes(1));
   expect(mockDeleteDoc).toHaveBeenCalledWith({ coll: "groceries", id: "i1" });
@@ -126,15 +129,16 @@ test("reset button is disabled when every checked item is pinned", async () => {
     { id: "i1", name: "Milk", qty: "", checked: true, skipReset: true, sectionId: "gen", order: 0 }, // pinned
     { id: "i2", name: "Bread", qty: "", checked: false, skipReset: false, sectionId: "gen", order: 1 }, // unchecked
   ]);
-  // Nothing is resettable (pinned + unchecked), so the reset action is disabled.
-  expect(screen.getByRole("button", { name: "Reset checked items" })).toBeDisabled();
+
+  expect(screen.getByRole("button", { name: "Reset list" })).toBeDisabled();
 });
 
 test("reset button is enabled when a checked, unpinned item exists", async () => {
   await renderApp([
     { id: "i1", name: "Milk", qty: "", checked: true, skipReset: false, sectionId: "gen", order: 0 },
   ]);
-  expect(screen.getByRole("button", { name: "Reset checked items" })).toBeEnabled();
+
+  expect(screen.getByRole("button", { name: "Reset list" })).toBeEnabled();
 });
 
 test("search filters the visible items", async () => {
@@ -143,7 +147,11 @@ test("search filters the visible items", async () => {
     { id: "i2", name: "Bread", qty: "", checked: false, skipReset: false, sectionId: "gen", order: 1 },
   ]);
 
-  fireEvent.change(screen.getByPlaceholderText("Search items…"), { target: { value: "milk" } });
+  // Search is revealed by the header search button.
+  fireEvent.click(screen.getByRole("button", { name: "Search items" }));
+  fireEvent.change(screen.getByPlaceholderText("Search items…"), {
+    target: { value: "milk" },
+  });
 
   expect(screen.getByText("Milk")).toBeInTheDocument();
   expect(screen.queryByText("Bread")).not.toBeInTheDocument();

@@ -7,15 +7,15 @@ import App from "./App";
 
 // Load Google Font
 const link = document.createElement("link");
-link.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap";
+link.href = "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&display=swap";
 link.rel = "stylesheet";
 document.head.appendChild(link);
 
-// Native-only setup (no-ops on web). The header is dark teal, so the status bar
-// needs light (white) content. In Capacitor's (counterintuitive) enum, Style.Dark
-// = "light text for dark backgrounds". Hide the splash once the web layer mounts.
+// Native-only setup (no-ops on web). The header is now light (#F6F8F7), so the
+// status bar needs dark content. In Capacitor's (counterintuitive) enum,
+// Style.Light = "dark text for light backgrounds". Hide the splash once mounted.
 if (Capacitor.isNativePlatform()) {
-  StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+  StatusBar.setStyle({ style: Style.Light }).catch(() => {});
   SplashScreen.hide().catch(() => {});
 }
 

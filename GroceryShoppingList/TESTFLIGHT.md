@@ -9,10 +9,11 @@ upload it.
 
 | Thing | Value |
 |---|---|
-| App name | **GrocerySync** |
+| App Store Connect name | **AppassovGrocerySync** (must be globally unique) |
+| Home-screen name | **GrocerySync** (from the Xcode project — can differ from the store name) |
 | Bundle ID | **`com.appassov.grocerysync`** |
-| Marketing version | **1.0.0** |
-| Build number | **1** (increment on every re-upload) |
+| Marketing version | **1.1.0** |
+| Build number | **2** (increment on every re-upload) |
 
 > The Firebase config is baked into the app at build time (from `.env.local`).
 > That's expected and safe — the Firebase **web API key is not a secret**; access
@@ -35,7 +36,8 @@ These need your Apple ID / 2FA, so they can't be automated.
   from <https://developer.apple.com/account> → **Membership** (10 characters).
 - [ ] **4. Create the app record.** App Store Connect → **Apps → + → New App**:
   - Platform: **iOS**
-  - Name: **GrocerySync**
+  - Name: **AppassovGrocerySync** (App Store names must be globally unique; this
+    is the store/dashboard name only — the home-screen label stays "GrocerySync")
   - Primary language: your choice
   - Bundle ID: **`com.appassov.grocerysync`** (if it's not listed, create it at
     <https://developer.apple.com/account/resources/identifiers> first)

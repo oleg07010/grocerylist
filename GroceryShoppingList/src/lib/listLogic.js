@@ -26,12 +26,23 @@ export const getGeneralSectionId = (sections) =>
 
 /**
  * Items belonging to a section (items with no sectionId fall back to General),
- * sorted ascending by `order`. Stable for equal orders (ES2019 sort).
+ * partitioned so unchecked items come first in their manual `order`, then checked
+ * items in the order they were checked (`checkedAt` asc). Legacy checked docs with
+ * no `checkedAt` fall back to 0 and cluster stably above newly-checked ones.
+ * Sorts are stable (ES2019).
  */
-export const getSectionItems = (items, sectionId, generalSectionId) =>
-  items
-    .filter((i) => (i.sectionId || generalSectionId) === sectionId)
+export const getSectionItems = (items, sectionId, generalSectionId) => {
+  const inSection = items.filter(
+    (i) => (i.sectionId || generalSectionId) === sectionId
+  );
+  const unchecked = inSection
+    .filter((i) => !i.checked)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const checked = inSection
+    .filter((i) => i.checked)
+    .sort((a, b) => (a.checkedAt ?? 0) - (b.checkedAt ?? 0));
+  return [...unchecked, ...checked];
+};
 
 /**
  * Next `order` for an item appended to a section: max existing order + 1,

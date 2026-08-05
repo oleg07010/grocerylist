@@ -133,7 +133,7 @@ Full step-by-step (Apple account setup, signing, uploading, adding your wife as
 an internal tester) is in **[`TESTFLIGHT.md`](./TESTFLIGHT.md)**.
 
 - Bundle ID: `com.appassov.grocerysync`
-- Version: `1.0.0` (build `1`)
+- Version: `1.1.0` (build `2`)
 
 ---
 

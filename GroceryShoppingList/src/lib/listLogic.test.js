@@ -128,6 +128,58 @@ describe("getSectionItems", () => {
       "a",
     ]);
   });
+
+  it("sinks checked items below unchecked regardless of order", () => {
+    const items = [
+      { id: "a", sectionId: "s1", order: 0, checked: true, checkedAt: 100 },
+      { id: "b", sectionId: "s1", order: 1, checked: false },
+      { id: "c", sectionId: "s1", order: 2, checked: false },
+    ];
+    expect(getSectionItems(items, "s1", "gen").map((i) => i.id)).toEqual([
+      "b",
+      "c",
+      "a",
+    ]);
+  });
+
+  it("orders checked items by checkedAt ascending (the order they were checked)", () => {
+    const items = [
+      { id: "a", sectionId: "s1", order: 0, checked: true, checkedAt: 300 },
+      { id: "b", sectionId: "s1", order: 1, checked: true, checkedAt: 100 },
+      { id: "c", sectionId: "s1", order: 2, checked: true, checkedAt: 200 },
+    ];
+    expect(getSectionItems(items, "s1", "gen").map((i) => i.id)).toEqual([
+      "b",
+      "c",
+      "a",
+    ]);
+  });
+
+  it("clusters legacy checked items (no checkedAt) stably before newly-checked ones", () => {
+    const items = [
+      { id: "new", sectionId: "s1", order: 0, checked: true, checkedAt: 500 },
+      { id: "legacy1", sectionId: "s1", order: 1, checked: true }, // no checkedAt -> 0
+      { id: "legacy2", sectionId: "s1", order: 2, checked: true }, // no checkedAt -> 0
+    ];
+    expect(getSectionItems(items, "s1", "gen").map((i) => i.id)).toEqual([
+      "legacy1",
+      "legacy2",
+      "new",
+    ]);
+  });
+
+  it("keeps unchecked in manual order even when a checked item has an earlier checkedAt", () => {
+    const items = [
+      { id: "u2", sectionId: "s1", order: 5, checked: false },
+      { id: "u1", sectionId: "s1", order: 1, checked: false },
+      { id: "done", sectionId: "s1", order: 0, checked: true, checkedAt: 10 },
+    ];
+    expect(getSectionItems(items, "s1", "gen").map((i) => i.id)).toEqual([
+      "u1",
+      "u2",
+      "done",
+    ]);
+  });
 });
 
 describe("nextItemOrder", () => {
