@@ -137,6 +137,41 @@ an internal tester) is in **[`TESTFLIGHT.md`](./TESTFLIGHT.md)**.
 
 ---
 
+## 🤖 Android App (Google Play)
+
+The same web app also runs as a native **Android** app via **Capacitor** (the
+`android/` Gradle project), sharing the same Firebase project as the web and iOS
+apps. It targets **API 36 (Android 16)** as required by Google Play.
+
+Rebuild-and-open loop when you change the app:
+
+```bash
+npm run build          # rebuild the web bundle (needs REACT_APP_* env vars)
+npx cap sync android   # copy it into the Android project + refresh plugins
+npx cap open android   # open the project in Android Studio
+```
+
+Command-line builds need **JDK 21** (Capacitor 7.6). If your shell isn't on 21,
+point Gradle at Android Studio's bundled JDK:
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+cd android && ./gradlew bundleRelease   # → app/build/outputs/bundle/release/app-release.aab
+```
+
+Full step-by-step (upload keystore, Play App Signing, closed-testing gate, data
+safety, store listing) is in **[`PLAYSTORE.md`](./PLAYSTORE.md)**.
+
+- Package name: `com.appassov.grocerysync`
+- Version: `1.2.0` (versionCode `1`)
+
+> **Edge-to-edge:** Android draws behind the system bars at API 36, so
+> `@capawesome/capacitor-android-edge-to-edge-support` applies the insets and
+> paints the bar areas white (`plugins.EdgeToEdge.backgroundColor` in
+> `capacitor.config.ts`), matching the header/compose bar.
+
+---
+
 ## Testing
 
 ```bash
@@ -146,6 +181,9 @@ npm test                 # interactive watch mode
 
 - **`src/lib/listLogic.test.js`** — unit tests for the pure list logic
   (search filter, section ordering, drag-reorder reindexing, reset/pin rules).
+- **`src/lib/nativeSetup.test.js`** — unit tests for the native startup setup
+  (no-op on web; sets dark status-bar content + hides the splash on native;
+  still hides the splash if status-bar styling fails).
 - **`src/App.test.jsx`** — integration tests that render `<App/>` with Firestore
   mocked and verify add / toggle / delete / search and the reset button state.
 
@@ -176,20 +214,28 @@ For a family app this is fine. If you ever want login-based access, let me know 
 ```
 grocery-app/
 ├── public/
-│   └── index.html         ← viewport-fit=cover for iOS safe areas
+│   ├── index.html         ← viewport-fit=cover for iOS safe areas
+│   └── privacy.html       ← privacy policy (hosted at /privacy.html for Play)
 ├── src/
 │   ├── firebase.js        ← Firebase config (from env vars)
 │   ├── App.jsx            ← Main app UI + Firestore wiring
-│   ├── index.js           ← Entry point (+ native status bar / splash)
+│   ├── index.js           ← Entry point (calls configureNativeUI())
 │   ├── lib/
 │   │   ├── listLogic.js   ← Pure list logic (filter, order, reorder, reset)
-│   │   └── listLogic.test.js
+│   │   ├── listLogic.test.js
+│   │   ├── haptics.js     ← Light haptic tap on native, no-op on web
+│   │   ├── nativeSetup.js ← Native status bar + splash setup (no-op on web)
+│   │   └── nativeSetup.test.js
 │   ├── App.test.jsx       ← Integration tests (Firestore mocked)
 │   └── setupTests.js
 ├── ios/                   ← Native iOS app (Capacitor) — see TESTFLIGHT.md
+├── android/               ← Native Android app (Capacitor) — see PLAYSTORE.md
 ├── resources/
-│   └── icon.png           ← 1024×1024 app icon source
-├── capacitor.config.ts    ← Capacitor config (bundle id, app name, webDir)
+│   ├── icon.png           ← 1024×1024 app icon source
+│   └── icon-*/splash*.png ← adaptive-icon + splash sources (generated)
+├── scripts/
+│   └── generate-android-icon-sources.mjs  ← derives adaptive/splash sources
+├── capacitor.config.ts    ← Capacitor config (bundle id, app name, webDir, plugins)
 ├── vercel.json            ← Vercel routing config
 ├── package.json
 └── .gitignore
@@ -203,5 +249,5 @@ grocery-app/
 - **Material UI v5** — Components & styling
 - **Firebase Firestore** — Real-time database (free tier: 50k reads + 20k writes/day)
 - **Vercel** — Web hosting (free, unlimited)
-- **Capacitor 7** — Wraps the web build into a native iOS app (see `TESTFLIGHT.md`)
+- **Capacitor 7** — Wraps the web build into native iOS (`TESTFLIGHT.md`) and Android (`PLAYSTORE.md`) apps
 - **Jest + React Testing Library** — Unit & integration tests

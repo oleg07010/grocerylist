@@ -17,3 +17,12 @@ xcuserdata/
 *.p8
 *.p12
 *.mobileprovision
+
+# Capacitor / Android
+# The native project (android/) IS committed. Its own android/.gitignore already
+# ignores build artifacts (build/, .gradle/, *.aab, local.properties, the copied
+# web assets, etc.). Only the signing secrets are added here.
+# (keystore.properties.example is a different filename, so it stays tracked.)
+*.jks
+*.keystore
+keystore.properties

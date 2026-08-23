@@ -1,8 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { Capacitor } from "@capacitor/core";
-import { StatusBar, Style } from "@capacitor/status-bar";
-import { SplashScreen } from "@capacitor/splash-screen";
+import { configureNativeUI } from "./lib/nativeSetup";
 import App from "./App";
 
 // Load Google Font
@@ -11,13 +9,9 @@ link.href = "https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600&di
 link.rel = "stylesheet";
 document.head.appendChild(link);
 
-// Native-only setup (no-ops on web). The header is now light (#F6F8F7), so the
-// status bar needs dark content. In Capacitor's (counterintuitive) enum,
-// Style.Light = "dark text for light backgrounds". Hide the splash once mounted.
-if (Capacitor.isNativePlatform()) {
-  StatusBar.setStyle({ style: Style.Light }).catch(() => {});
-  SplashScreen.hide().catch(() => {});
-}
+// Native-only UI setup (no-op on web): dark status-bar icons over the light
+// header + hide the launch splash once React is mounting.
+configureNativeUI();
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
