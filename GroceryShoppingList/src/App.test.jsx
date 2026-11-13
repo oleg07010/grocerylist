@@ -191,6 +191,27 @@ test("search filters the visible items", async () => {
   expect(screen.queryByText("Bread")).not.toBeInTheDocument();
 });
 
+// ---- Section delete confirmation ----
+
+test("deleting a section asks for confirmation first and does not delete yet", async () => {
+  await renderApp(
+    [
+      { id: "i1", name: "Milk", qty: "", checked: false, skipReset: false, sectionId: "dairy", order: 0 },
+      { id: "i2", name: "Eggs", qty: "", checked: false, skipReset: false, sectionId: "dairy", order: 1 },
+    ],
+    [...SECTIONS, { id: "dairy", name: "Dairy", order: 1 }]
+  );
+
+  // General (index 0) has no Delete; Dairy is the second section menu.
+  fireEvent.click(screen.getAllByRole("button", { name: "Section options" })[1]);
+  fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+
+  expect(await screen.findByText("Delete section?")).toBeInTheDocument();
+  expect(screen.getByText(/2 items will move to General/i)).toBeInTheDocument();
+  expect(mockBatch.commit).not.toHaveBeenCalled();
+  expect(mockBatch.delete).not.toHaveBeenCalled();
+});
+
 // ---- Auth gate ----
 
 const googleButton = () => screen.getByRole("button", { name: /sign in with google/i });

@@ -9,7 +9,7 @@ import {
   splitLegacyName,
   filterItems, countDone, countResettable, resettableItems,
   getGeneralSectionId, getSectionItems, nextItemOrder, nextSectionOrder,
-  reconcileSelectedSection, reorderSections, reorderItems,
+  reconcileSelectedSection, reorderSections, reorderItems, itemsInSection,
 } from "./lib/listLogic";
 import { lightImpact } from "./lib/haptics";
 
@@ -79,6 +79,7 @@ function GroceryList() {
   const [renameSectionTarget, setRenameSectionTarget] = useState(null);
   const [renameSectionValue, setRenameSectionValue] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
+  const [deleteSectionTarget, setDeleteSectionTarget] = useState(null);
   const [snack, setSnack] = useState({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
@@ -195,8 +196,11 @@ function GroceryList() {
     setRenameSectionOpen(false); showSnack("Section renamed!");
   };
 
-  const handleDeleteSection = async (section) => {
-    const sectionItems = items.filter((i) => i.sectionId === section.id);
+  const handleDeleteSection = async () => {
+    const section = deleteSectionTarget;
+    if (!section) return;
+    setDeleteSectionTarget(null);
+    const sectionItems = itemsInSection(items, section.id);
     const batch = writeBatch(db);
     sectionItems.forEach((i) =>
       batch.update(doc(db, "groceries", i.id), { sectionId: generalSectionId })
@@ -293,7 +297,7 @@ function GroceryList() {
             hasSearch={!!search}
             onItemDragEnd={handleItemDragEnd}
             onRenameSection={handleRenameSectionOpen}
-            onDeleteSection={handleDeleteSection}
+            onDeleteSection={setDeleteSectionTarget}
             onMoveSectionUp={(index) => handleReorderSection(index, index - 1)}
             onMoveSectionDown={(index) => handleReorderSection(index, index + 1)}
             onToggleItem={handleToggle}
@@ -355,6 +359,34 @@ function GroceryList() {
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setRenameSectionOpen(false)} color="inherit">Cancel</Button>
           <Button variant="contained" onClick={handleRenameSectionSave} disabled={!renameSectionValue.trim()}>Save</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Section Dialog */}
+      <Dialog open={!!deleteSectionTarget} onClose={() => setDeleteSectionTarget(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Delete section?</DialogTitle>
+        <DialogContent>
+          {deleteSectionTarget && (() => {
+            const n = itemsInSection(items, deleteSectionTarget.id).length;
+            return (
+              <Typography variant="body2" color="text.secondary">
+                Delete "{deleteSectionTarget.name}"?{" "}
+                {n === 0
+                  ? "It has no items."
+                  : `${n} item${n === 1 ? "" : "s"} will move to General.`}
+              </Typography>
+            );
+          })()}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setDeleteSectionTarget(null)} color="inherit">Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleDeleteSection}
+            sx={{ bgcolor: tokens.color.danger, "&:hover": { bgcolor: tokens.color.danger } }}
+          >
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
 

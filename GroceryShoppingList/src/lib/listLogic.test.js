@@ -11,6 +11,7 @@ import {
   reconcileSelectedSection,
   reorderSections,
   reorderItems,
+  itemsInSection,
 } from "./listLogic";
 
 describe("splitLegacyName", () => {
@@ -393,5 +394,22 @@ describe("reorderItems", () => {
       "gen"
     );
     expect(items).toEqual(snapshot);
+  });
+});
+
+describe("itemsInSection", () => {
+  const items = [
+    { id: "a", sectionId: "s1" },
+    { id: "b", sectionId: "s2" },
+    { id: "c", sectionId: "s1" },
+  ];
+  it("returns only the items stored in that section", () => {
+    expect(itemsInSection(items, "s1").map((i) => i.id)).toEqual(["a", "c"]);
+  });
+  it("returns one item", () => {
+    expect(itemsInSection(items, "s2")).toHaveLength(1);
+  });
+  it("returns an empty array for an empty section", () => {
+    expect(itemsInSection(items, "s3")).toEqual([]);
   });
 });

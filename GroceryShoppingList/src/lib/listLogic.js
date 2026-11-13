@@ -53,6 +53,10 @@ export const getGeneralSectionId = (sections) =>
  * no `checkedAt` fall back to 0 and cluster stably above newly-checked ones.
  * Sorts are stable (ES2019).
  */
+/** Items stored in a section (by raw sectionId) — what a section delete moves. */
+export const itemsInSection = (items, sectionId) =>
+  items.filter((i) => i.sectionId === sectionId);
+
 export const getSectionItems = (items, sectionId, generalSectionId) => {
   const inSection = items.filter(
     (i) => (i.sectionId || generalSectionId) === sectionId
