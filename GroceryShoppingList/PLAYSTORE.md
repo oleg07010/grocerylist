@@ -48,20 +48,16 @@ Google Play Console → **Create app**:
 - App or game: **App** · Free or paid: **Free** (⚠️ a free app can't become paid later)
 
 ### A3. Generate your upload keystore (once)
+Create the upload key and wire it into `android/keystore.properties`. Full
+step-by-step (every `keytool` prompt explained, backup + troubleshooting) is in
+**[`KEYSTORE.md`](./KEYSTORE.md)**. In short:
 ```bash
-keytool -genkey -v -keystore grocerysync-upload.jks \
-  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+keytool -genkeypair -v -keystore ~/keys/grocerysync-upload.jks \
+  -alias upload -keyalg RSA -keysize 2048 -validity 10000
+cp android/keystore.properties.example android/keystore.properties   # then fill it in
 ```
-It prompts for a **keystore password**, a **key password**, and name fields.
-**Back up the `.jks` file and both passwords somewhere safe** — you sign every
-future update with it.
-
-Then create `android/keystore.properties` from the template and fill it in:
-```bash
-cp android/keystore.properties.example android/keystore.properties
-# edit android/keystore.properties: storeFile (absolute path), passwords, alias
-```
-`keystore.properties` and `*.jks` are gitignored — never commit them.
+**Back up the `.jks` file and its password** — you sign every future update with
+it. `keystore.properties` and `*.jks` are gitignored; never commit them.
 
 ### A4. Play App Signing
 New apps auto-enroll in **Play App Signing**: you hold the **upload key** (above);
