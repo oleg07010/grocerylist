@@ -16,4 +16,7 @@ ext {
     androidxJunitVersion = '1.2.1'
     androidxEspressoCoreVersion = '3.6.1'
     cordovaAndroidVersion = '10.1.1'
+    // @capacitor-firebase/authentication: include the native Google sign-in SDK.
+    rgcfaIncludeGoogle = true
+    androidxCredentialsVersion = '1.3.0'
 }

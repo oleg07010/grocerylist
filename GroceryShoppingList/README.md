@@ -189,23 +189,38 @@ npm test                 # interactive watch mode
 
 ---
 
-## Optional: Secure Your Database (Recommended After Testing)
+## Security — Google Sign-In + Firestore Rules (required)
 
-By default Firebase is in "test mode" (anyone with the URL can read/write).
-To lock it down, go to **Firestore → Rules** and replace the rules with:
+The database is **not** open. Every read/write requires a Google sign-in whose
+email is on the allowlist in `firestore.rules` (versioned in this repo).
 
-```js
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /groceries/{docId} {
-      allow read, write: if true; // Keep open, or add auth later
-    }
-  }
-}
-```
+- **Sign-in:** Google only (`src/components/SignIn.jsx` → `src/lib/googleSignIn.js`).
+  Web uses the Firebase popup. iOS/Android use the native Google sheet from
+  `@capacitor-firebase/authentication` (`skipNativeAuth: true`) and pass the ID
+  token to the Firebase JS SDK.
+- **Firebase Console setup:** Authentication → Sign-in method → **Google** enabled.
+  Authentication → Settings → **Authorized domains** must include the Vercel domain.
+- **Native config files (not committed):** `ios/App/App/GoogleService-Info.plist`
+  (its `REVERSED_CLIENT_ID` is also an Xcode URL Type) and
+  `android/app/google-services.json`. Download them with
+  `firebase apps:sdkconfig IOS|ANDROID <appId>`.
+- **Android SHA-1s:** debug, upload key and **Play App Signing** key must all be
+  added to the Firebase Android app, or Google sign-in fails on that build.
+- **Add a household member:** add their Google email to the list in
+  `firestore.rules`, then run:
+  ```bash
+  firebase deploy --only firestore:rules --project grocery-shopping-list-ff7b5
+  ```
+- **Check it's locked:** this must return `403`:
+  ```bash
+  curl -s -o /dev/null -w "%{http_code}\n" \
+    "https://firestore.googleapis.com/v1/projects/grocery-shopping-list-ff7b5/databases/(default)/documents/groceries"
+  ```
+- **Backups:** Point-in-Time Recovery, delete protection and scheduled backups
+  require the Blaze (billing) plan. Without it, deleted data cannot be recovered.
 
-For a family app this is fine. If you ever want login-based access, let me know and I can add Firebase Authentication.
+Never change the rules to `allow read, write: if true` — anyone on the internet
+could then read and delete the list. That happened in 2026-11.
 
 ---
 
@@ -217,7 +232,7 @@ grocery-app/
 │   ├── index.html         ← viewport-fit=cover for iOS safe areas
 │   └── privacy.html       ← privacy policy (hosted at /privacy.html for Play)
 ├── src/
-│   ├── firebase.js        ← Firebase config (from env vars)
+│   ├── firebase.js        ← Firebase config + auth (from env vars)
 │   ├── App.jsx            ← Main app UI + Firestore wiring
 │   ├── index.js           ← Entry point (calls configureNativeUI())
 │   ├── lib/

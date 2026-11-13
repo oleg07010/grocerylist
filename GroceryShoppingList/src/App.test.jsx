@@ -13,7 +13,20 @@ const mockBatch = {
 const mockWriteBatch = jest.fn(() => mockBatch);
 const mockCallbacks = {}; // { groceries: cb, sections: cb }
 
-jest.mock("./firebase", () => ({ db: {} }));
+jest.mock("./firebase", () => ({ db: {}, auth: {} }));
+
+// ---- Auth mock: tests default to a signed-in user; set mockAuthUser = null to sign out ----
+let mockAuthUser = { uid: "u1", email: "me@example.com" };
+jest.mock("firebase/auth", () => ({
+  onAuthStateChanged: (_auth, cb) => {
+    cb(mockAuthUser);
+    return () => {};
+  },
+}));
+const mockGoogleSignIn = jest.fn(() => Promise.resolve());
+jest.mock("./lib/googleSignIn", () => ({
+  signInWithGoogle: (...a) => mockGoogleSignIn(...a),
+}));
 
 jest.mock("firebase/firestore", () => ({
   collection: (_db, name) => name,
@@ -58,6 +71,8 @@ const renderApp = async (items, sections = SECTIONS) => {
 };
 
 beforeEach(() => {
+  mockAuthUser = { uid: "u1", email: "me@example.com" };
+  mockGoogleSignIn.mockClear();
   mockAddDoc.mockClear();
   mockUpdateDoc.mockClear();
   mockDeleteDoc.mockClear();
@@ -174,4 +189,38 @@ test("search filters the visible items", async () => {
 
   expect(screen.getByText("Milk")).toBeInTheDocument();
   expect(screen.queryByText("Bread")).not.toBeInTheDocument();
+});
+
+// ---- Auth gate ----
+
+const googleButton = () => screen.getByRole("button", { name: /sign in with google/i });
+
+test("signed out: shows the Google sign-in screen and does not touch Firestore", () => {
+  mockAuthUser = null;
+  render(<App />);
+  expect(googleButton()).toBeInTheDocument();
+  expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
+  expect(mockCallbacks.groceries).toBeUndefined();
+  expect(mockCallbacks.sections).toBeUndefined();
+});
+
+test("tapping the Google button starts Google sign-in", async () => {
+  mockAuthUser = null;
+  render(<App />);
+  fireEvent.click(googleButton());
+  await waitFor(() => expect(mockGoogleSignIn).toHaveBeenCalledTimes(1));
+});
+
+test("a failed Google sign-in shows an error", async () => {
+  mockAuthUser = null;
+  mockGoogleSignIn.mockImplementationOnce(() => Promise.reject(new Error("popup-closed")));
+  render(<App />);
+  fireEvent.click(googleButton());
+  expect(await screen.findByText(/sign-in failed/i)).toBeInTheDocument();
+});
+
+test("signed in: shows the list, not the sign-in screen", async () => {
+  await renderApp([]);
+  expect(screen.getByText("GrocerySync")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /sign in with google/i })).not.toBeInTheDocument();
 });

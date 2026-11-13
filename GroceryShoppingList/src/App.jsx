@@ -3,7 +3,8 @@ import {
   collection, onSnapshot, addDoc, updateDoc, deleteDoc,
   doc, writeBatch, serverTimestamp, query, orderBy,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { db, auth } from "./firebase";
 import {
   splitLegacyName,
   filterItems, countDone, countResettable, resettableItems,
@@ -25,10 +26,38 @@ import AppShell from "./components/AppShell";
 import Header from "./components/Header";
 import SectionList from "./components/SectionList";
 import ComposeBar from "./components/ComposeBar";
+import SignIn from "./components/SignIn";
 
 const DEFAULT_SECTION = "general";
 
+// Auth gate: the list (and every Firestore listener) only mounts once a user is
+// signed in. Access is enforced server-side by firestore.rules; this is just UX.
 export default function App() {
+  const [user, setUser] = useState(undefined); // undefined = still resolving
+  useEffect(() => onAuthStateChanged(auth, (u) => setUser(u ?? null)), []);
+
+  if (user === undefined) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress sx={{ color: tokens.color.accent }} />
+        </Box>
+      </ThemeProvider>
+    );
+  }
+  if (!user) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <SignIn />
+      </ThemeProvider>
+    );
+  }
+  return <GroceryList />;
+}
+
+function GroceryList() {
   const [items, setItems] = useState([]);
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);

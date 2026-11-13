@@ -4,6 +4,9 @@
 
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import {
+  initializeAuth, indexedDBLocalPersistence, browserLocalPersistence,
+} from "firebase/auth";
 
 const required = {
   REACT_APP_FIREBASE_API_KEY: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -41,3 +44,8 @@ if (process.env.REACT_APP_FIREBASE_MEASUREMENT_ID) {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+// initializeAuth (not getAuth): getAuth pulls in the popup/redirect resolver, which
+// hangs inside the Capacitor iOS/Android WebView. Email+password needs neither.
+export const auth = initializeAuth(app, {
+  persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+});

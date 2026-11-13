@@ -1,3 +1,4 @@
+/// <reference types="@capacitor-firebase/authentication" />
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
@@ -24,6 +25,12 @@ const config: CapacitorConfig = {
     // status-bar icons stay dark (StatusBar Style.Light) for contrast.
     EdgeToEdge: {
       backgroundColor: "#FFFFFF",
+    },
+    // Native Google sign-in sheet only; the Firebase JS SDK owns the session
+    // (see src/lib/googleSignIn.js), so skip the native Firebase Auth sign-in.
+    FirebaseAuthentication: {
+      skipNativeAuth: true,
+      providers: ["google.com"],
     },
   },
 };

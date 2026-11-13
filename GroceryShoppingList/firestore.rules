@@ -1,0 +1,25 @@
+rules_version = '2';
+// Only the household's Google accounts may read or write.
+// To add someone: add their Google email below, then
+//   firebase deploy --only firestore:rules --project grocery-shopping-list-ff7b5
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isHousehold() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'google.com'
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'oleg.appassov@gmail.com',
+          'csgambellone@gmail.com'
+        ];
+    }
+
+    match /groceries/{docId} {
+      allow read, write: if isHousehold();
+    }
+    match /sections/{docId} {
+      allow read, write: if isHousehold();
+    }
+    // Everything else stays closed.
+  }
+}

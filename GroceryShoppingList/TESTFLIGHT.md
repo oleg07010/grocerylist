@@ -13,11 +13,12 @@ upload it.
 | Home-screen name | **GrocerySync** (from the Xcode project — can differ from the store name) |
 | Bundle ID | **`com.appassov.grocerysync`** |
 | Marketing version | **1.1.0** |
-| Build number | **2** (increment on every re-upload) |
+| Build number | **6** (increment on every re-upload) |
 
 > The Firebase config is baked into the app at build time (from `.env.local`).
 > That's expected and safe — the Firebase **web API key is not a secret**; access
-> is controlled by your Firestore rules. The iOS app talks to the same Firebase
+> is controlled by the Firestore rules in `firestore.rules`, which require a
+> signed-in, allowlisted account (see README → Security). The iOS app talks to the same Firebase
 > project as the website, so both share one live list.
 
 ---
