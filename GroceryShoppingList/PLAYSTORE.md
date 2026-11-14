@@ -14,7 +14,7 @@ ready Gradle project. You sign it with your own **upload key** and upload a sign
 | versionName | **1.2.0** (mirrors `package.json`) |
 | versionCode | **1** (integer — **must increase by 1 on every upload**) |
 | Target / compile API | **36 (Android 16)** — required for new Play submissions |
-| Build JDK | **21** (Capacitor 7.6 requires it; Android Studio bundles it) |
+| Build JDK | **21** (Capacitor 7.6 requires it) — Homebrew `openjdk@21`; Android Studio now bundles JDK **25**, not 21 |
 | Signed bundle output | `android/app/build/outputs/bundle/release/app-release.aab` |
 | Firebase project | **`grocery-shopping-list-ff7b5`** |
 | Firebase Android app ID | **`1:681935409933:android:0d2711b5e749650fb85644`** |
@@ -38,15 +38,17 @@ ready Gradle project. You sign it with your own **upload key** and upload a sign
 ## Part A — One-time setup
 
 ### A1. Prerequisites (local machine)
-- **Android Studio** installed (bundles the Android SDK + a **JDK 21** JBR).
+- **Android Studio** installed (bundles the Android SDK).
 - **Android SDK Platform 36** installed (Android Studio → *Settings → Languages &
   Frameworks → Android SDK → SDK Platforms → Android 16 / API 36*).
-- Command-line builds must run on **JDK 21**. If your shell `java -version` is not
-  21, point Gradle at Android Studio's bundled JDK for the build commands:
+- Builds must run on **JDK 21**. Android Studio's bundled JDK is now **25**, and this Mac's default `java` is
+  17, so point Gradle at Homebrew's JDK 21 (`brew install openjdk@21` if it's missing):
   ```bash
-  export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+  export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
   ```
-  (Building from *inside* Android Studio uses its JDK 21 automatically.)
+  Verified 2026-11-14: `./gradlew bundleRelease` builds on it (Gradle 8.11.1, AGP 8.7.2). To build from
+  *inside* Android Studio instead, set the same JDK 21 under *Settings → Build, Execution, Deployment → Build
+  Tools → Gradle → Gradle JDK*.
 
 ### A2. Create the app in Play Console
 Google Play Console → **Create app**:
@@ -115,16 +117,20 @@ From the project folder (the one with `package.json`):
 ```bash
 ls android/app/google-services.json   # must exist (A3), or Google sign-in won't work
 npm run build                    # web bundle (needs REACT_APP_* env vars!)
-npx cap sync android             # copy web bundle + config into android/
+LANG=en_US.UTF-8 npx cap sync android   # copy web bundle + config into android/ (the path has spaces)
 cd android
-export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"  # if needed
+export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home   # JDK 21 (A1)
 ./gradlew bundleRelease          # signed .aab (uses keystore.properties)
 ```
 Output: **`android/app/build/outputs/bundle/release/app-release.aab`** — upload this.
 
-> Prefer Android Studio? `npx cap open android`, then **Build → Generate Signed
-> App Bundle** (or just **Build → Build Bundle(s)** once `keystore.properties` is
-> set), and grab the same `.aab`.
+> Prefer Android Studio? `npx cap open android` (with its Gradle JDK set to 21 — A1), then **Build → Generate
+> Signed App Bundle** (or just **Build → Build Bundle(s)** once `keystore.properties` is set), and grab the same
+> `.aab`.
+>
+> Check the bundle is signed before uploading: `keytool -printcert -jarfile
+> app/build/outputs/bundle/release/app-release.aab` prints your upload certificate (the name you gave `keytool`);
+> an unsigned bundle prints nothing.
 
 ---
 
@@ -252,7 +258,7 @@ npx cap sync android
 
 | Symptom | Fix |
 |---|---|
-| `error: invalid source release: 21` | Gradle is on JDK 17. Use JDK 21 (`export JAVA_HOME=".../Android Studio.app/Contents/jbr/Contents/Home"`) or build from Android Studio. |
+| `error: invalid source release: 21` | Gradle is on JDK 17. Use JDK 21: `export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home` (A1). Android Studio's own JDK is 25 now, so it no longer stands in for 21. |
 | Upload rejected: target API too low | `variables.gradle` must have `targetSdkVersion = 36` (and `compileSdkVersion = 36`). |
 | Content hidden under the status/nav bar | Edge-to-edge insets come from `@capawesome/capacitor-android-edge-to-edge-support` + `plugins.EdgeToEdge.backgroundColor` (`#FFFFFF`, matching the header/compose bar) in `capacitor.config.ts`. Re-run `npx cap sync android`. |
 | Release build is unsigned | `android/keystore.properties` is missing/incorrect (the signing config is skipped when absent). See A4. |

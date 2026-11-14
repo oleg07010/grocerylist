@@ -79,14 +79,15 @@ keyPassword=YOUR_PASSWORD
 
 ## Step 5 — Build the signed bundle
 ```bash
-npm run build && npx cap sync android
-cd android && export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+npm run build && LANG=en_US.UTF-8 npx cap sync android
+cd android && export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
 ./gradlew bundleRelease
 ```
 → signed bundle at `android/app/build/outputs/bundle/release/app-release.aab` — upload this to Play.
 
-> `export JAVA_HOME=...` is needed because CLI builds require **JDK 21** (Android
-> Studio builds set this automatically).
+> `export JAVA_HOME=...` is needed because builds require **JDK 21** — Homebrew's `openjdk@21` (`brew install
+> openjdk@21` if missing). Android Studio's bundled JDK is now 25 and this Mac's default `java` is 17, so neither
+> stands in for it (see [`PLAYSTORE.md`](./PLAYSTORE.md) A1).
 
 ---
 
@@ -106,6 +107,6 @@ its existing installs are safe; you just register a new upload certificate.
 | `keystore password was incorrect` on build | `storePassword`/`keyPassword` in `keystore.properties` don't match Step 2. |
 | `Cannot recover key` | Key password ≠ store password. For PKCS12 they must be equal — set both the same. |
 | Release build is unsigned | `android/keystore.properties` missing or `storeFile` path wrong (use absolute path). |
-| `keytool: command not found` | Use Android Studio's JDK: `"/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/keytool"`. |
+| `keytool: command not found` | Use the JDK 21's own: `/opt/homebrew/opt/openjdk@21/bin/keytool` (any JDK's `keytool` works for this step). |
 
 See **[`PLAYSTORE.md`](./PLAYSTORE.md)** for the full Play Store submission flow.

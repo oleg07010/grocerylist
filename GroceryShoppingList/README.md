@@ -155,11 +155,11 @@ npx cap sync android   # copy it into the Android project + refresh plugins
 npx cap open android   # open the project in Android Studio
 ```
 
-Command-line builds need **JDK 21** (Capacitor 7.6). If your shell isn't on 21,
-point Gradle at Android Studio's bundled JDK:
+Builds need **JDK 21** (Capacitor 7.6). Android Studio's bundled JDK is now 25, so point Gradle at Homebrew's
+`openjdk@21` (`brew install openjdk@21` if missing):
 
 ```bash
-export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
 cd android && ./gradlew bundleRelease   # → app/build/outputs/bundle/release/app-release.aab
 ```
 
