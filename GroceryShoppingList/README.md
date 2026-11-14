@@ -132,6 +132,10 @@ Then use Xcode to **Archive → Distribute → App Store Connect** and add teste
 Full step-by-step (Apple account setup, signing, uploading, adding your wife as
 an internal tester) is in **[`TESTFLIGHT.md`](./TESTFLIGHT.md)**.
 
+The iOS app uses the **UIScene life cycle** (`ios/App/App/SceneDelegate.swift` + the scene manifest in `Info.plist`):
+since iOS 27, an app built with Xcode 27 without it is killed at launch. Keep both; `src/iosSceneLifecycle.test.js`
+guards them.
+
 - Bundle ID: `com.appassov.grocerysync`
 - Version: `1.1.0` (build `2`)
 

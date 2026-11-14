@@ -12,8 +12,9 @@ upload it.
 | App Store Connect name | **AppassovGrocerySync** (must be globally unique) |
 | Home-screen name | **GrocerySync** (from the Xcode project — can differ from the store name) |
 | Bundle ID | **`com.appassov.grocerysync`** |
-| Marketing version | **1.1.0** |
-| Build number | **7** (increment on every re-upload) |
+| Marketing version | **1.2.0** |
+| Build number | **8** (increment on every re-upload) |
+| Window life cycle | **UIScene** — `ios/App/App/SceneDelegate.swift` + the `UIApplicationSceneManifest` in `Info.plist`. ⚠️ Never remove: since iOS 27, an app built with Xcode 27 without it is killed at launch (build 7 did exactly that, see Troubleshooting). Guarded by `src/iosSceneLifecycle.test.js`. |
 
 > The Firebase config is baked into the app at build time (from `.env.local`).
 > That's expected and safe — the Firebase **web API key is not a secret**; access
@@ -93,7 +94,7 @@ In Xcode:
 Apple rejects a duplicate build number. Each time you upload again:
 
 1. Xcode → **App** target → **General** → bump **Build** (`1` → `2` → …).
-   Keep **Version** at `1.0.0` unless you're doing a real release.
+   Keep **Version** as it is (`1.2.0`) unless you're doing a real release.
 2. `npm run build && npx cap sync ios`, then Archive → Distribute again.
 
 ---
@@ -103,9 +104,12 @@ Apple rejects a duplicate build number. Each time you upload again:
 ```bash
 npm run build && npx cap sync ios && npx cap open ios
 ```
-Pick a notched simulator (e.g. **iPhone 16 Pro**) and press **Run** (▶). Check:
+Pick a notched simulator (e.g. **iPhone 17**) and press **Run** (▶). Check:
 the app icon appears, the teal header clears the status bar (white status-bar
 text), and add / check / edit / delete / reset / search all work.
+
+**Always run it once on an iOS 27 simulator** (Xcode → Settings → Components if the runtime is missing): a build
+made with Xcode 27 that lacks the scene life cycle launches fine on iOS 26 and is killed at launch only on iOS 27.
 
 ---
 
@@ -113,6 +117,7 @@ text), and add / check / edit / delete / reset / search all work.
 
 | Symptom | Fix |
 |---|---|
+| App closes the instant it's tapped on iOS 27; the device log reads "Application failed to launch: UIScene life cycle is required for apps built with this SDK" | The app was built with Xcode 27 without the scene life cycle (TestFlight build 1.2.0 (7), 2026-11-13; Apple TN3187). Fixed in build 8: `SceneDelegate.swift` + the scene manifest in `Info.plist` (Facts table). Builds made with the iOS 26 SDK still launched, which is why older builds worked. |
 | Upload rejected: bundle ID mismatch | Make `com.appassov.grocerysync` match in **all three**: `capacitor.config.ts`, the Xcode target's Bundle Identifier, and the App Store Connect record. |
 | Upload rejected: invalid icon / alpha channel | The icon must be an opaque 1024×1024 PNG. Regenerate from `resources/icon.png` (already opaque). |
 | "Redundant/duplicate build" | Bump the **Build** number (see above). |
