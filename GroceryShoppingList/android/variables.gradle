@@ -1,5 +1,7 @@
 ext {
-    minSdkVersion = 23
+    // Play's automatic protection rejects bundles below API 24 (Android 7.0): "Play automatic protection requires a
+    // minimum SDK version of 24 or higher" (2026-11-14). Capacitor 7's default of 23 only added Android 6.0.
+    minSdkVersion = 24
     // Google Play requires new apps/updates to target API 36 (Android 16) as of
     // Aug 31, 2026. targetSdk must be <= compileSdk, so both are bumped from the
     // Capacitor 7 default of 35.

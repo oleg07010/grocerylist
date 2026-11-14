@@ -12,8 +12,9 @@ ready Gradle project. You sign it with your own **upload key** and upload a sign
 | App name (Play listing) | **GrocerySync** |
 | Package name (applicationId) | **`com.appassov.grocerysync`** ⚠️ permanent, never changes |
 | versionName | **1.2.0** (mirrors `package.json`) |
-| versionCode | **1** (integer — **must increase by 1 on every upload**) |
+| versionCode | **3** (integer — **must increase on every upload**; 1 = first internal release, 2 = the bundle Play's protection refused) |
 | Target / compile API | **36 (Android 16)** — required for new Play submissions |
+| Min SDK | **24 (Android 7.0)** — Play's automatic protection refuses bundles below 24 (`android/variables.gradle`) |
 | Build JDK | **21** (Capacitor 7.6 requires it) — Homebrew `openjdk@21`; Android Studio now bundles JDK **25**, not 21 |
 | Signed bundle output | `android/app/build/outputs/bundle/release/app-release.aab` |
 | Firebase project | **`grocery-shopping-list-ff7b5`** |
@@ -268,4 +269,5 @@ npx cap sync android
 | App runs but list is empty / won't sync | `REACT_APP_*` Firebase env vars weren't present at `npm run build`. Rebuild with `.env.local`. |
 | A tester can't find the app on Play | Testing builds aren't searchable — send them the join link (Part C). |
 | `versionCode` already used | Bump it (see "Re-uploading"). |
+| "Play automatic protection requires a minimum SDK version of 24 or higher" | `minSdkVersion` must be ≥ 24 in `android/variables.gradle` (it is since versionCode 3). Rebuild with a new versionCode and upload again. |
 | `cap sync` UTF-8 error (path has spaces) | Prefix with `LANG=en_US.UTF-8`. |

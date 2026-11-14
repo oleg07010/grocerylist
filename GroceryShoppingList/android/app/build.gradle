@@ -20,7 +20,7 @@ android {
         // versionName mirrors package.json (do not bump here for its own sake).
         // versionCode is an Android-only integer that MUST strictly increase on
         // every Play upload (2, 3, ...); it is not a semver bump.
-        versionCode 1
+        versionCode 3
         versionName "1.2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
