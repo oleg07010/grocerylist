@@ -21,7 +21,7 @@ no fuss. One list, always in sync.
 WHY GROCERYSYNC
 • Real-time sync — changes show up instantly for everyone sharing the list.
 • Beautifully simple — a calm, uncluttered design that's quick to use in the aisle.
-• No account needed — open it and start adding. Nothing to sign up for.
+• Private to your household — sign in with Google; only the accounts your household adds can open the list.
 • Free, and no ads.
 
 FEATURES
@@ -47,7 +47,8 @@ tracking, no selling your data. See our privacy policy for details.
 
 ## Contact / policy
 - Support email: oleg.appassov@gmail.com
-- Privacy policy: https://<your-production-domain>/privacy.html
+- Privacy policy: https://grocerylist-virid.vercel.app/privacy.html
+- Account deletion link (Data safety form): https://grocerylist-virid.vercel.app/privacy.html#delete
 
 ## Graphics (in this folder)
 - `play-store-icon-512.png` — 512×512 store icon (32-bit)
@@ -56,6 +57,10 @@ tracking, no selling your data. See our privacy policy for details.
   I captured a sample; not committed since it shows real list data.
 
 ## Data safety answers (recap — full detail in PLAYSTORE.md)
-Collects "App activity → Other user-generated content" (grocery text); collected
-not shared; not linked to identity; not used for tracking; encrypted in transit;
-deletion available (in-app + email). App access: no special access. Ads: No.
+Collects "Personal info → Email address, Name, User IDs" (Google sign-in via Firebase
+Authentication; required; account management + app functionality; linked to the user)
+and "App activity → Other user-generated content" (the grocery text; not linked).
+Nothing shared; not used for tracking; encrypted in transit; deletion: items in-app,
+account and data by email (privacy.html#delete). Account creation: yes (Google sign-in)
+— deletion web link above; in-app: header ⋮ → Delete account…. App access: sign-in
+required (give reviewers a demo Google account on the allowlist). Ads: No.

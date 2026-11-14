@@ -3,6 +3,7 @@ import { Box, IconButton, Typography } from "@mui/material";
 import { tokens } from "../theme/tokens";
 import { CartIcon, SearchIcon, AddSectionIcon } from "./icons";
 import ProgressBar from "./ProgressBar";
+import AccountMenu from "./AccountMenu";
 
 const iconBtnSx = {
   width: 34,
@@ -64,6 +65,7 @@ export default function Header({
         <IconButton aria-label="Add section" onClick={onAddSection} sx={iconBtnSx}>
           <AddSectionIcon size={18} />
         </IconButton>
+        <AccountMenu buttonSx={iconBtnSx} />
       </Box>
 
       {/* Row 2 — progress + reset */}

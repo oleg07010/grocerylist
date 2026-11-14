@@ -94,6 +94,17 @@ test("renders the header and items from Firestore", async () => {
   expect(screen.getByText("Bread")).toBeInTheDocument();
 });
 
+test("the header's account menu links to account deletion", async () => {
+  await renderApp([]);
+
+  fireEvent.click(screen.getByRole("button", { name: "Account options" }));
+
+  expect(screen.getByRole("menuitem", { name: "Delete account…" })).toHaveAttribute(
+    "href",
+    "https://grocerylist-virid.vercel.app/privacy.html#delete"
+  );
+});
+
 test("adding an item writes to the groceries collection", async () => {
   await renderApp([]);
 

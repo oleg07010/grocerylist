@@ -25,7 +25,7 @@
   <body>
     <div class="wrap">
       <h1>GrocerySync — Privacy Policy</h1>
-      <p class="date">Last updated: 22 August 2026</p>
+      <p class="date">Last updated: 14 November 2026</p>
 
       <p>
         GrocerySync is a simple shared grocery-list app. This policy explains what
@@ -33,9 +33,28 @@
         GrocerySync apps for Android and iOS, which all use the same shared list.
       </p>
 
+      <h2>Signing in</h2>
+      <p>
+        GrocerySync asks you to sign in with your Google account. Sign-in is handled by
+        Google (Google Sign-In and <strong>Firebase Authentication</strong>). When you
+        sign in, Firebase Authentication keeps an account for you with:
+      </p>
+      <ul>
+        <li>Your Google account's email address</li>
+        <li>The basic profile Google shares at sign-in: your name and a link to your profile photo</li>
+        <li>An account ID, and when the account was created and last signed in</li>
+      </ul>
+      <p>
+        Your email address decides whether you can open the list: only the Google
+        accounts on the household's list can see or change it. Signing in with any other
+        Google account creates the same sign-in record but gives no access to the list.
+        GrocerySync never sees your Google password.
+      </p>
+
       <h2>What the app stores</h2>
       <p>
-        The only data GrocerySync stores is the content you type into your list:
+        Besides your sign-in account, the only data GrocerySync stores is the content
+        you type into your list:
       </p>
       <ul>
         <li>Grocery item names and optional details (brand, size, notes)</li>
@@ -43,20 +62,21 @@
       </ul>
       <p>
         This content is saved to <strong>Google Firebase Firestore</strong>, a cloud
-        database, so the list stays in sync across devices. It is transmitted over an
-        encrypted (HTTPS/TLS) connection.
+        database, so the list stays in sync across devices. List items are not tied to
+        the account that added them. Everything is transmitted over an encrypted
+        (HTTPS/TLS) connection.
       </p>
 
       <h2>What the app does <em>not</em> collect</h2>
       <ul>
-        <li>No accounts, sign-in, names, emails, or phone numbers</li>
+        <li>No phone numbers</li>
         <li>No advertising, and no ad identifiers</li>
         <li>No analytics, tracking, or third-party trackers</li>
-        <li>No location, contacts, photos, or device identifiers</li>
+        <li>No location, contacts, photos from your device, or device identifiers</li>
       </ul>
       <p>
-        Your list data is not sold or shared with third parties. Firebase acts only as
-        the service provider that stores the data on our behalf.
+        Your data is not sold or shared with third parties. Google (Firebase) acts only
+        as the service provider that stores it on our behalf.
       </p>
 
       <div class="note">
@@ -65,12 +85,21 @@
         remove the same items. Please don't enter anything private or sensitive.
       </div>
 
-      <h2>Data retention and deletion</h2>
+      <h2 id="delete">Deleting your account and data</h2>
       <p>
-        Items remain in the list until they are deleted. You can delete any item at any
-        time from within the app (each item's <strong>&middot;&middot;&middot;</strong>
-        menu &rarr; Delete). To request deletion of stored list data, contact us at the
-        email below and we will remove it.
+        Your sign-in account is kept until you ask us to delete it. To delete your
+        GrocerySync account, email
+        <a href="mailto:oleg.appassov@gmail.com?subject=Delete%20my%20GrocerySync%20account">oleg.appassov@gmail.com</a>
+        from the Google account you sign in with (or tell us which address it is). We
+        will delete your sign-in account (email address, name, photo link and account
+        ID) and remove your email from the household's list.
+      </p>
+      <p>
+        Grocery items are shared by the household and not tied to an account, so
+        deleting your account does not remove them. Items remain in the list until they
+        are deleted: you can delete any item at any time from within the app (each
+        item's <strong>&middot;&middot;&middot;</strong> menu &rarr; Delete), or ask us
+        in the same email to remove stored list data.
       </p>
 
       <h2>Children</h2>
